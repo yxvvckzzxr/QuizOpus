@@ -222,9 +222,18 @@
         let entryNumbers = [];
 
         async function init() {
-            const answersSnap = await db.ref('answers').get();
-            if (answersSnap.exists()) {
-                entryNumbers = Object.keys(answersSnap.val()).map(Number).sort((a, b) => a - b);
+            try {
+                const res = await fetch('https://ciq-saiten-default-rtdb.asia-southeast1.firebasedatabase.app/answers.json?shallow=true');
+                const data = await res.json();
+                if (data) {
+                    entryNumbers = Object.keys(data).map(Number).sort((a, b) => a - b);
+                }
+            } catch(e) {
+                // fallback
+                const answersSnap = await db.ref('answers').get();
+                if (answersSnap.exists()) {
+                    entryNumbers = Object.keys(answersSnap.val()).map(Number).sort((a, b) => a - b);
+                }
             }
             db.ref('scores').on('value', snap => {
                 scoresData = snap.val() || {};

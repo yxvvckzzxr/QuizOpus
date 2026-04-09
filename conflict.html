@@ -231,10 +231,16 @@
         let currentConflicts = [];
 
         async function init() {
-            const answersSnap = await db.ref('answers').get();
-            if (answersSnap.exists()) {
-                answersData = answersSnap.val();
-                entryNumbers = Object.keys(answersData).map(Number).sort((a, b) => a - b);
+            try {
+                const res = await fetch('https://ciq-saiten-default-rtdb.asia-southeast1.firebasedatabase.app/answers.json?shallow=true');
+                const data = await res.json();
+                if (data) entryNumbers = Object.keys(data).map(Number).sort((a, b) => a - b);
+            } catch(e) {
+                const answersSnap = await db.ref('answers').get();
+                if (answersSnap.exists()) {
+                    answersData = answersSnap.val();
+                    entryNumbers = Object.keys(answersData).map(Number).sort((a, b) => a - b);
+                }
             }
 
             const answersTextSnap = await db.ref('answers_text').get();
@@ -267,6 +273,16 @@
                     }
                 });
             }
+
+            // 画像の必要部分だけダイナミックに一括取得
+            const promises = conflicts.map(async c => {
+                if (!answersData[c.entryNum]) answersData[c.entryNum] = { cells: {} };
+                if (answersData[c.entryNum].cells[`q${c.q}`] === undefined) {
+                    const snap = await db.ref(`answers/${c.entryNum}/cells/q${c.q}`).get();
+                    answersData[c.entryNum].cells[`q${c.q}`] = snap.val() || null;
+                }
+            });
+            Promise.all(promises).then(() => {
 
             currentConflicts = conflicts;
             if (selectedIndex >= conflicts.length) selectedIndex = Math.max(0, conflicts.length - 1);
@@ -319,6 +335,7 @@
             });
 
             scrollToSelectedConflict();
+            }); // End of Promise.all
         }
 
         async function setFinal(q, entryNum, result) {

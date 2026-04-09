@@ -237,11 +237,12 @@
                 workCanvas.height = viewport.height;
                 await page.render({ canvasContext: workCtx, viewport }).promise;
 
-                // トンボ検出
-                const detectedTombo = detectTombo(config.tombo);
+                // トンボ検出 (矩形ベース)
+                const detectedResult = detectTombo(config.tombo);
 
-                // アフィン変換行列を計算
-                const transform = calcTransform(config.tombo, detectedTombo);
+                // アフィン変換行列を計算（設定側は矩形の中心を正確な基準点とする）
+                const refCenterPoints = config.tombo.map(r => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 }));
+                const transform = calcTransform(refCenterPoints, detectedResult);
 
                 // 受付番号読み取り（補正済み座標を使用）
                 const correctedMarkCells = config.markCells.map(cell => transformRegion(cell, transform));
@@ -255,7 +256,7 @@
                     cells.push({ q: q + 1, imageData });
                 }
 
-                answers.push({ page: pageNum, entryNumber, cells, tomboError: detectedTombo.error });
+                answers.push({ page: pageNum, entryNumber, cells, tomboError: detectedResult.error });
 
                 const pct = Math.round((pageNum / total) * 100);
                 document.getElementById('progress-bar').style.width = pct + '%';
@@ -266,29 +267,31 @@
             showResults();
         }
 
-        // トンボ検出：設定座標周辺の暗い領域の重心を求める
         function detectTombo(refTombo) {
             const detected = [];
-            const searchRadius = 50; // 探索範囲（px）
+            const margin = 20; // 探索範囲の余裕（px）
             let error = false;
 
             for (const ref of refTombo) {
-                const x1 = Math.max(0, Math.round(ref.x - searchRadius));
-                const y1 = Math.max(0, Math.round(ref.y - searchRadius));
-                const x2 = Math.min(workCanvas.width, Math.round(ref.x + searchRadius));
-                const y2 = Math.min(workCanvas.height, Math.round(ref.y + searchRadius));
+                const refCX = ref.x + ref.w / 2;
+                const refCY = ref.y + ref.h / 2;
+
+                const x1 = Math.max(0, Math.floor(ref.x - margin));
+                const y1 = Math.max(0, Math.floor(ref.y - margin));
+                const x2 = Math.min(workCanvas.width, Math.ceil(ref.x + ref.w + margin));
+                const y2 = Math.min(workCanvas.height, Math.ceil(ref.y + ref.h + margin));
                 const w = x2 - x1;
                 const h = y2 - y1;
 
                 if (w <= 0 || h <= 0) {
-                    detected.push({ x: ref.x, y: ref.y });
+                    detected.push({ x: refCX, y: refCY });
                     error = true;
                     continue;
                 }
 
                 const imageData = workCtx.getImageData(x1, y1, w, h);
                 let sumX = 0, sumY = 0, count = 0;
-                const threshold = 80; // 暗さの閾値
+                const threshold = 100; // 暗さの閾値
 
                 for (let py = 0; py < h; py++) {
                     for (let px = 0; px < w; px++) {
@@ -308,8 +311,8 @@
                         y: y1 + sumY / count
                     });
                 } else {
-                    // トンボが見つからない場合は設定値を使用
-                    detected.push({ x: ref.x, y: ref.y });
+                    // トンボが見つからない場合は設定値の中心を使用
+                    detected.push({ x: refCX, y: refCY });
                     error = true;
                 }
             }
