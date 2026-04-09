@@ -26,7 +26,8 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
         }
 
         h1 {
@@ -34,7 +35,6 @@
         }
 
         .scorer-badge {
-            margin-left: auto;
             background: #0f3460;
             padding: 6px 12px;
             border-radius: 8px;
@@ -55,9 +55,26 @@
             background: #388e3c;
         }
 
+        .btn.secondary {
+            background: #0f3460;
+            border: 1px solid #444;
+        }
+
+        .btn.secondary:hover {
+            background: #1a4a7a;
+        }
+
+        .btn.warning {
+            background: #e65100;
+        }
+
+        .btn.warning:hover {
+            background: #bf360c;
+        }
+
         .legend {
             display: flex;
-            gap: 12px;
+            gap: 16px;
             margin-bottom: 16px;
             flex-wrap: wrap;
         }
@@ -80,7 +97,6 @@
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 8px;
-            margin-bottom: 20px;
         }
 
         .q-card {
@@ -93,34 +109,25 @@
             min-height: 90px;
         }
 
-        .q-card:hover {
+        .q-card:hover:not(.locked) {
             border-color: #4caf50;
         }
 
         .q-card.locked {
             cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        .q-card.locked:hover {
-            border-color: transparent;
+            opacity: 0.5;
         }
 
         .q-card.mine {
             border-color: #2196f3;
         }
 
+        .q-card.inprogress {
+            background: #0d2a5e;
+        }
+
         .q-card.done {
             background: #1b3a1f;
-        }
-
-        .q-card.conflict {
-            background: #3a1b00;
-            border-color: #ff9800;
-        }
-
-        .q-card.confirmed {
-            background: #1a237e;
         }
 
         .q-num {
@@ -132,12 +139,12 @@
         .q-scorers {
             font-size: 10px;
             color: #aaa;
-            line-height: 1.6;
+            line-height: 1.8;
         }
 
         .q-status {
             font-size: 10px;
-            margin-top: 4px;
+            margin-top: 6px;
             padding: 2px 6px;
             border-radius: 4px;
             display: inline-block;
@@ -145,7 +152,7 @@
 
         .status-open {
             background: #333;
-            color: #aaa;
+            color: #888;
         }
 
         .status-inprogress {
@@ -158,19 +165,9 @@
             color: #a5d6a7;
         }
 
-        .status-conflict {
-            background: #e65100;
-            color: #ffcc80;
-        }
-
-        .status-confirmed {
-            background: #1a237e;
-            color: #90caf9;
-        }
-
         .status-locked {
             background: #333;
-            color: #666;
+            color: #555;
         }
     </style>
 </head>
@@ -179,7 +176,12 @@
     <div class="top-bar">
         <h1>問題一覧</h1>
         <div class="scorer-badge" id="scorer-badge"></div>
-        <button class="btn" id="admin-btn" style="display:none" onclick="location.href='admin.html'">管理者画面</button>
+        <div style="margin-left:auto;display:flex;gap:8px;">
+            <button class="btn warning" id="conflict-btn" style="display:none"
+                onclick="location.href='conflict.html'">要確認</button>
+            <button class="btn secondary" id="admin-btn" style="display:none"
+                onclick="location.href='admin.html'">管理者画面</button>
+        </div>
     </div>
 
     <div class="legend">
@@ -187,19 +189,13 @@
             <div class="legend-dot" style="background:#16213e;border:1px solid #444"></div>未着手
         </div>
         <div class="legend-item">
-            <div class="legend-dot" style="background:#0d47a1"></div>採点中
+            <div class="legend-dot" style="background:#0d2a5e"></div>採点中
         </div>
         <div class="legend-item">
             <div class="legend-dot" style="background:#1b3a1f"></div>完了
         </div>
         <div class="legend-item">
-            <div class="legend-dot" style="background:#3a1b00;border:1px solid #ff9800"></div>要確認
-        </div>
-        <div class="legend-item">
-            <div class="legend-dot" style="background:#1a237e"></div>確定
-        </div>
-        <div class="legend-item">
-            <div class="legend-dot" style="border:2px solid #2196f3"></div>自分が担当
+            <div class="legend-dot" style="border:2px solid #2196f3;background:transparent"></div>自分が担当
         </div>
     </div>
 
@@ -222,12 +218,13 @@
         const scorerName = sessionStorage.getItem('scorer_name');
         const scorerRole = sessionStorage.getItem('scorer_role');
 
-        if (!scorerName) {
-            location.href = 'index.html';
-        }
+        if (!scorerName) location.href = 'index.html';
 
-        document.getElementById('scorer-badge').textContent = `${scorerName}（${scorerRole === 'admin' ? '管理者' : '採点者'}）`;
+        document.getElementById('scorer-badge').textContent =
+            `${scorerName}（${scorerRole === 'admin' ? '管理者' : '採点者'}）`;
+
         if (scorerRole === 'admin') {
+            document.getElementById('conflict-btn').style.display = 'block';
             document.getElementById('admin-btn').style.display = 'block';
         }
 
@@ -246,7 +243,6 @@
             qGrid.appendChild(card);
         }
 
-        // リアルタイム監視
         db.ref('scores').on('value', snap => {
             const scores = snap.val() || {};
             updateGrid(scores);
@@ -254,44 +250,24 @@
 
         function updateGrid(scores) {
             for (let q = 1; q <= 100; q++) {
-                // この問題を担当してる採点者を集計
-                const scorers = {}; // {scorerName: {completed: bool}}
-
-                // scoresからこの問題の採点者を抽出
-                Object.values(scores).forEach(entryScores => {
-                    const qScores = entryScores[`q${q}`] || {};
-                    Object.keys(qScores).forEach(name => {
-                        if (name !== '__completed') {
-                            if (!scorers[name]) scorers[name] = { completed: false };
-                        }
-                    });
+                // この問題を担当してる採点者を収集
+                const scorers = new Set();
+                Object.keys(scores).forEach(key => {
+                    if (key.startsWith('__')) return;
+                    const qScores = scores[key]?.[`q${q}`] || {};
+                    Object.keys(qScores).forEach(name => scorers.add(name));
                 });
 
-                // 完了フラグ確認
-                const completedSnap = scores[`__completed__q${q}`] || {};
-                Object.keys(completedSnap).forEach(name => {
-                    if (!scorers[name]) scorers[name] = {};
-                    scorers[name].completed = true;
-                });
+                // __scorers__からも収集
+                const scorerReg = scores[`__scorers__q${q}`] || {};
+                Object.keys(scorerReg).forEach(name => scorers.add(name));
 
-                const scorerNames = Object.keys(scorers);
-                const completedCount = Object.values(scorers).filter(s => s.completed).length;
-                const isMine = scorerNames.includes(scorerName);
-                const isFull = scorerNames.length >= 3 && !isMine;
-                const allDone = scorerNames.length >= 3 && completedCount >= 3;
+                const scorerList = [...scorers];
+                const completedScorers = Object.keys(scores[`__completed__q${q}`] || {});
+                const isMine = scorerList.includes(scorerName);
+                const isFull = scorerList.length >= 3 && !isMine;
+                const allDone = scorerList.length >= 3 && completedScorers.length >= 3;
 
-                // 食い違いチェック
-                let hasConflict = false;
-                if (allDone) {
-                    // 答案ごとにこの問題の結果を比較
-                    // entryNumbersを取得して比較
-                    hasConflict = checkConflict(scores, q);
-                }
-
-                // confirmed確認
-                const isConfirmed = scores[`__final__q${q}`] !== undefined;
-
-                // カードの状態更新
                 const card = document.getElementById(`qcard-${q}`);
                 const statusEl = document.getElementById(`qstatus-${q}`);
                 const scorersEl = document.getElementById(`qscorers-${q}`);
@@ -299,62 +275,38 @@
                 card.className = 'q-card';
                 if (isMine) card.classList.add('mine');
                 if (isFull) card.classList.add('locked');
+                if (allDone) card.classList.add('done');
+                else if (scorerList.length > 0) card.classList.add('inprogress');
 
-                scorersEl.innerHTML = scorerNames.map(name => {
-                    const done = scorers[name].completed;
+                scorersEl.innerHTML = scorerList.map(name => {
+                    const done = completedScorers.includes(name);
                     return `${done ? '✓' : '…'} ${name}`;
                 }).join('<br>');
-
-                if (isConfirmed) {
-                    card.classList.add('confirmed');
-                    statusEl.className = 'q-status status-confirmed';
-                    statusEl.textContent = '確定';
-                } else if (hasConflict) {
-                    card.classList.add('conflict');
-                    statusEl.className = 'q-status status-conflict';
-                    statusEl.textContent = '要確認';
-                } else if (allDone) {
-                    card.classList.add('done');
-                    statusEl.className = 'q-status status-done';
-                    statusEl.textContent = '完了';
-                } else if (scorerNames.length > 0) {
-                    statusEl.className = 'q-status status-inprogress';
-                    statusEl.textContent = `採点中 ${scorerNames.length}/3`;
-                } else {
-                    statusEl.className = 'q-status status-open';
-                    statusEl.textContent = '未着手';
-                }
 
                 if (isFull && !isMine) {
                     statusEl.className = 'q-status status-locked';
                     statusEl.textContent = '満員';
+                } else if (allDone) {
+                    statusEl.className = 'q-status status-done';
+                    statusEl.textContent = '完了';
+                } else if (scorerList.length > 0) {
+                    statusEl.className = 'q-status status-inprogress';
+                    statusEl.textContent = `採点中 ${scorerList.length}/3`;
+                } else {
+                    statusEl.className = 'q-status status-open';
+                    statusEl.textContent = '未着手';
                 }
             }
-        }
-
-        function checkConflict(scores, q) {
-            const entryNumbers = Object.keys(scores).filter(k => !k.startsWith('__'));
-            for (const entryNum of entryNumbers) {
-                const qScores = scores[entryNum]?.[`q${q}`] || {};
-                const vals = Object.values(qScores).filter(v => v !== undefined);
-                if (vals.length >= 2) {
-                    const corrects = vals.filter(v => v === 'correct').length;
-                    const wrongs = vals.filter(v => v === 'wrong').length;
-                    if (corrects > 0 && wrongs > 0) return true;
-                }
-            }
-            return false;
         }
 
         function enterQ(q) {
-            // ロック確認
             const card = document.getElementById(`qcard-${q}`);
             if (card.classList.contains('locked')) {
                 alert('この問題はすでに3人が採点中です');
                 return;
             }
             sessionStorage.setItem('current_q', q);
-            location.href = `question.html`;
+            location.href = 'question.html';
         }
     </script>
 </body>
