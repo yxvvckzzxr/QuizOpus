@@ -122,7 +122,8 @@
             padding: 10px;
             text-align: center;
             border: 2px solid #444;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            cursor: pointer;
         }
 
         .answer-card.correct {
@@ -150,49 +151,8 @@
             margin-bottom: 8px;
         }
 
-        .mark-btns {
-            display: flex;
-            gap: 6px;
-            justify-content: center;
-        }
-
-        .mark-btn {
-            flex: 1;
-            padding: 8px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-size: 18px;
-            font-weight: bold;
-            transition: all 0.15s;
-        }
-
-        .mark-btn.correct-btn {
-            background: #333;
-            color: #4caf50;
-        }
-
-        .mark-btn.correct-btn:hover {
-            background: #1b5e20;
-        }
-
-        .mark-btn.wrong-btn {
-            background: #333;
-            color: #ef5350;
-        }
-
-        .mark-btn.wrong-btn:hover {
-            background: #b71c1c;
-        }
-
-        .mark-btn.selected-correct {
-            background: #4caf50;
-            color: white;
-        }
-
-        .mark-btn.selected-wrong {
-            background: #ef5350;
-            color: white;
+        .answer-card.selected {
+            box-shadow: 0 0 0 3px #2196f3, 0 0 12px rgba(33, 150, 243, 0.3);
         }
 
         .loading {
@@ -243,6 +203,7 @@
         let myScores = {};
         let entryNumbers = [];
         let isCompleted = false;
+        let selectedIndex = 0;
 
         async function init() {
             // 模範解答読み込み
@@ -280,33 +241,90 @@
             const grid = document.getElementById('answer-grid');
             grid.innerHTML = '';
 
+            if (selectedIndex >= entryNumbers.length) selectedIndex = Math.max(0, entryNumbers.length - 1);
+
             const total = entryNumbers.length;
             const done = entryNumbers.filter(n => myScores[n] !== null).length;
             document.getElementById('progress-text').textContent = `${done} / ${total} 件`;
 
-            entryNumbers.forEach(entryNum => {
+            entryNumbers.forEach((entryNum, idx) => {
                 const imageData = answers[entryNum]?.cells[`q${currentQ}`];
                 const myScore = myScores[entryNum];
 
                 const card = document.createElement('div');
-                card.className = `answer-card ${myScore === 'correct' ? 'correct' : myScore === 'wrong' ? 'wrong' : ''}`;
+                card.className = `answer-card ${myScore === 'correct' ? 'correct' : myScore === 'wrong' ? 'wrong' : ''} ${idx === selectedIndex ? 'selected' : ''}`;
                 card.innerHTML = `
           <img src="${imageData || ''}" alt="${entryNum}番" />
           <div class="entry-num">受付番号 ${entryNum}</div>
-          <div class="mark-btns">
-            <button class="mark-btn correct-btn ${myScore === 'correct' ? 'selected-correct' : ''}"
-              onclick="mark(${entryNum}, 'correct')">○</button>
-            <button class="mark-btn wrong-btn ${myScore === 'wrong' ? 'selected-wrong' : ''}"
-              onclick="mark(${entryNum}, 'wrong')">×</button>
-          </div>
         `;
+                card.addEventListener('click', () => selectCard(idx));
                 grid.appendChild(card);
             });
+
+            scrollToSelected();
         }
 
         function mark(entryNum, result) {
             db.ref(`scores/${entryNum}/q${currentQ}/${scorerName}`).set(result);
         }
+
+        function selectCard(idx) {
+            if (idx < 0 || idx >= entryNumbers.length) return;
+            selectedIndex = idx;
+            const cards = document.querySelectorAll('.answer-card');
+            cards.forEach((card, i) => card.classList.toggle('selected', i === selectedIndex));
+            scrollToSelected();
+        }
+
+        function advanceSelection() {
+            if (selectedIndex < entryNumbers.length - 1) {
+                selectCard(selectedIndex + 1);
+            }
+        }
+
+        function getGridCols() {
+            const grid = document.getElementById('answer-grid');
+            return getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+        }
+
+        function scrollToSelected() {
+            const cards = document.querySelectorAll('.answer-card');
+            if (cards[selectedIndex]) {
+                cards[selectedIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (entryNumbers.length === 0) return;
+            const key = e.key;
+            if (key === 'm' || key === 'M') {
+                e.preventDefault();
+                const entryNum = entryNumbers[selectedIndex];
+                if (entryNum !== undefined) {
+                    mark(entryNum, 'correct');
+                    advanceSelection();
+                }
+            } else if (key === 'b' || key === 'B') {
+                e.preventDefault();
+                const entryNum = entryNumbers[selectedIndex];
+                if (entryNum !== undefined) {
+                    mark(entryNum, 'wrong');
+                    advanceSelection();
+                }
+            } else if (key === 'ArrowRight') {
+                e.preventDefault();
+                selectCard(selectedIndex + 1);
+            } else if (key === 'ArrowLeft') {
+                e.preventDefault();
+                selectCard(selectedIndex - 1);
+            } else if (key === 'ArrowDown') {
+                e.preventDefault();
+                selectCard(selectedIndex + getGridCols());
+            } else if (key === 'ArrowUp') {
+                e.preventDefault();
+                selectCard(selectedIndex - getGridCols());
+            }
+        });
 
         function updateCompleteBtn() {
             const total = entryNumbers.length;

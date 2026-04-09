@@ -75,6 +75,8 @@
             border-radius: 12px;
             padding: 16px;
             border: 2px solid #ff9800;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
         }
 
         .conflict-card.resolved {
@@ -150,54 +152,27 @@
             font-weight: bold;
         }
 
-        .final-btns {
-            display: flex;
-            gap: 8px;
+        .conflict-card.selected {
+            box-shadow: 0 0 0 3px #2196f3, 0 0 12px rgba(33, 150, 243, 0.3);
         }
 
-        .final-btn {
-            flex: 1;
-            padding: 10px;
+        .final-result {
+            text-align: center;
+            padding: 8px;
             border-radius: 8px;
-            border: 2px solid transparent;
-            cursor: pointer;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
-            transition: all 0.15s;
+            margin-top: 8px;
         }
 
-        .final-btn.correct-btn {
-            background: #333;
-            color: #4caf50;
-            border-color: #333;
-        }
-
-        .final-btn.correct-btn:hover {
+        .final-result.correct {
             background: #1b5e20;
-            border-color: #4caf50;
+            color: #4caf50;
         }
 
-        .final-btn.wrong-btn {
-            background: #333;
+        .final-result.wrong {
+            background: #3a1b1b;
             color: #ef5350;
-            border-color: #333;
-        }
-
-        .final-btn.wrong-btn:hover {
-            background: #b71c1c;
-            border-color: #ef5350;
-        }
-
-        .final-btn.selected-correct {
-            background: #4caf50;
-            color: white;
-            border-color: #4caf50;
-        }
-
-        .final-btn.selected-wrong {
-            background: #ef5350;
-            color: white;
-            border-color: #ef5350;
         }
 
         .no-conflict {
@@ -250,6 +225,8 @@
         let answersText = {};
         let scoresData = {};
         let entryNumbers = [];
+        let selectedIndex = 0;
+        let currentConflicts = [];
 
         async function init() {
             const answersSnap = await db.ref('answers').get();
@@ -289,6 +266,9 @@
                 });
             }
 
+            currentConflicts = conflicts;
+            if (selectedIndex >= conflicts.length) selectedIndex = Math.max(0, conflicts.length - 1);
+
             const unresolvedCount = conflicts.filter(c => !c.finalResult).length;
             document.getElementById('counter').textContent =
                 `未確定 ${unresolvedCount}件 / 全${conflicts.length}件`;
@@ -301,12 +281,12 @@
             }
 
             grid.innerHTML = '';
-            conflicts.forEach(({ q, entryNum, qScores, finalResult }) => {
+            conflicts.forEach(({ q, entryNum, qScores, finalResult }, idx) => {
                 const imageData = answersData[entryNum]?.cells[`q${q}`];
                 const modelAnswer = answersText[q] || '';
 
                 const card = document.createElement('div');
-                card.className = `conflict-card ${finalResult ? 'resolved' : ''}`;
+                card.className = `conflict-card ${finalResult ? 'resolved' : ''} ${idx === selectedIndex ? 'selected' : ''}`;
 
                 const votesHtml = Object.entries(qScores).map(([name, val]) => `
           <div class="vote-item">
@@ -325,20 +305,76 @@
           <img class="answer-img" src="${imageData || ''}" alt="${entryNum}番 ${q}問" />
           ${modelAnswer ? `<div class="model-answer">${modelAnswer}</div>` : ''}
           <div class="scorer-votes">${votesHtml}</div>
-          <div class="final-btns">
-            <button class="final-btn correct-btn ${finalResult === 'correct' ? 'selected-correct' : ''}"
-              onclick="setFinal(${q}, ${entryNum}, 'correct')">○</button>
-            <button class="final-btn wrong-btn ${finalResult === 'wrong' ? 'selected-wrong' : ''}"
-              onclick="setFinal(${q}, ${entryNum}, 'wrong')">×</button>
-          </div>
+          ${finalResult ? `<div class="final-result ${finalResult}">判定: ${finalResult === 'correct' ? '○' : '×'}</div>` : ''}
         `;
+                card.addEventListener('click', () => selectConflictCard(idx));
                 grid.appendChild(card);
             });
+
+            scrollToSelectedConflict();
         }
 
         async function setFinal(q, entryNum, result) {
             await db.ref(`scores/__final__q${q}/${entryNum}`).set(result);
         }
+
+        function selectConflictCard(idx) {
+            if (idx < 0 || idx >= currentConflicts.length) return;
+            selectedIndex = idx;
+            const cards = document.querySelectorAll('.conflict-card');
+            cards.forEach((card, i) => card.classList.toggle('selected', i === selectedIndex));
+            scrollToSelectedConflict();
+        }
+
+        function advanceConflictSelection() {
+            if (selectedIndex < currentConflicts.length - 1) {
+                selectConflictCard(selectedIndex + 1);
+            }
+        }
+
+        function getConflictGridCols() {
+            const grid = document.getElementById('conflict-grid');
+            return getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+        }
+
+        function scrollToSelectedConflict() {
+            const cards = document.querySelectorAll('.conflict-card');
+            if (cards[selectedIndex]) {
+                cards[selectedIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (currentConflicts.length === 0) return;
+            const key = e.key;
+            if (key === 'm' || key === 'M') {
+                e.preventDefault();
+                const conflict = currentConflicts[selectedIndex];
+                if (conflict) {
+                    setFinal(conflict.q, conflict.entryNum, 'correct');
+                    advanceConflictSelection();
+                }
+            } else if (key === 'b' || key === 'B') {
+                e.preventDefault();
+                const conflict = currentConflicts[selectedIndex];
+                if (conflict) {
+                    setFinal(conflict.q, conflict.entryNum, 'wrong');
+                    advanceConflictSelection();
+                }
+            } else if (key === 'ArrowRight') {
+                e.preventDefault();
+                selectConflictCard(selectedIndex + 1);
+            } else if (key === 'ArrowLeft') {
+                e.preventDefault();
+                selectConflictCard(selectedIndex - 1);
+            } else if (key === 'ArrowDown') {
+                e.preventDefault();
+                selectConflictCard(selectedIndex + getConflictGridCols());
+            } else if (key === 'ArrowUp') {
+                e.preventDefault();
+                selectConflictCard(selectedIndex - getConflictGridCols());
+            }
+        });
 
         init();
     </script>
