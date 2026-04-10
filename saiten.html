@@ -29,6 +29,7 @@
   <div class="top-bar">
     <button class="btn secondary" onclick="location.href='judge.html'">← 採点画面へ</button>
     <h1>プロジェクト設定・解答用紙ジェネレーター</h1>
+    <div style="margin-left: auto; background: #0f3460; padding: 6px 12px; border-radius: 8px; font-size: 14px; border: 1px solid #444;" id="project-id-display"></div>
   </div>
 
   <div class="main">
@@ -87,6 +88,8 @@
       alert('管理者としてプロジェクトに入室してください');
       location.href = 'index.html';
     }
+
+    document.getElementById('project-id-display').textContent = `プロジェクトID: ${pid}`;
 
     document.getElementById('project-title') ? document.getElementById('project-title').textContent = `プロジェクトID: ${pid} の設定` : null;
 
