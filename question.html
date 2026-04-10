@@ -450,15 +450,13 @@ const projectId = session.projectId;
             }
             let masterData = {}; try { masterData = JSON.parse(localStorage.getItem('masterData')||'{}'); } catch(e) {}
             const name = masterData[entryNum]?.name || `受付番号 ${entryNum}`;
-            overlay.innerHTML = `<div class="preview-header"><h2>${name} の全回答</h2><button class="preview-close" onclick="document.getElementById('preview-overlay').classList.remove('show')">✕ 閉じる</button></div><div class="preview-grid" id="preview-grid"><div style="color:#aaa">読み込み中...</div></div>`;
+            overlay.innerHTML = `<div class="preview-header"><h2>${name} の解答用紙</h2><button class="preview-close" onclick="document.getElementById('preview-overlay').classList.remove('show')">✕ 閉じる</button></div><div id="preview-content" style="text-align:center"><div style="color:#aaa">読み込み中...</div></div>`;
             overlay.classList.add('show');
-            const snap = await db.ref(`projects/${projectId}/answers/${entryNum}/cells`).get();
-            const pg = document.getElementById('preview-grid'); pg.innerHTML = '';
+            const snap = await db.ref(`projects/${projectId}/answers/${entryNum}/pageImage`).get();
+            const pc = document.getElementById('preview-content');
             if (snap.exists()) {
-                const cells = snap.val();
-                const keys = Object.keys(cells).sort((a,b) => parseInt(a.replace('q','')) - parseInt(b.replace('q','')));
-                keys.forEach(k => { const n = k.replace('q',''); const d = document.createElement('div'); d.className = 'pv-item'; d.innerHTML = `<img src="${cells[k]}" alt="${n}問"><div class="pv-label">${n}問</div>`; pg.appendChild(d); });
-            } else { pg.innerHTML = '<div style="color:#aaa">データがありません</div>'; }
+                pc.innerHTML = `<img src="${snap.val()}" alt="${name}" style="max-width:100%;border-radius:8px;background:white;">`;
+            } else { pc.innerHTML = '<div style="color:#aaa">ページ画像が保存されていません。管理画面から答案を再読み込みしてください。</div>'; }
         }
         document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('preview-overlay')?.classList.remove('show'); });
     </script>
