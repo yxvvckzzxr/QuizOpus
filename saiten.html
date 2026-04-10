@@ -156,7 +156,7 @@
         const y = gridMarginTop + row * rowHeight;
 
         // 問題番号の枠線と印字
-        doc.rect(x, y, colWidth, rowHeight);
+        doc.rect(x, y, colWidth, rowHeight, 'S');
         doc.text((i + 1).toString(), x + 2, y + 4);
 
         // システムが読み取る解答枠 (x + 8 から右端まで)
@@ -183,7 +183,7 @@
           const cx = markSheetX + col * (bubbleW + 1);
           const cy = markSheetY + row * (bubbleH + 2);
           
-          doc.ellipse(cx + bubbleW/2, cy + bubbleH/2, bubbleW/2, bubbleH/2);
+          doc.ellipse(cx + bubbleW/2, cy + bubbleH/2, bubbleW/2, bubbleH/2, 'S');
           doc.text(col.toString(), cx + bubbleW/2 - 1, cy + bubbleH/2 + 1);
           
           // config に保存
@@ -194,8 +194,8 @@
       // 4. 名前・所属枠 (Bottom Right)
       const nameBoxX = 110;
       const nameBoxY = bottomY;
-      doc.rect(nameBoxX, nameBoxY, 85, 18);
-      doc.line(nameBoxX + 20, nameBoxY, nameBoxX + 20, nameBoxY + 18);
+      doc.rect(nameBoxX, nameBoxY, 85, 18, 'S');
+      doc.line(nameBoxX + 20, nameBoxY, nameBoxX + 20, nameBoxY + 18, 'S');
       doc.setFontSize(10);
       doc.text("氏名・所属", nameBoxX + 2, nameBoxY + 10);
 
