@@ -238,6 +238,9 @@
                 const viewport = page.getViewport({ scale: config.scale || 1.5 });
                 workCanvas.width = viewport.width;
                 workCanvas.height = viewport.height;
+                // PDF透過背景対策: 描画前に白で塗りつぶす
+                workCtx.fillStyle = '#ffffff';
+                workCtx.fillRect(0, 0, workCanvas.width, workCanvas.height);
                 await page.render({ canvasContext: workCtx, viewport }).promise;
 
                 // トンボ検出 (矩形ベース)
