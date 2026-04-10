@@ -247,9 +247,27 @@
                 // トンボ検出（逆さま自動補正付き）
                 let detectedResult = detectTombo(config.tombo);
 
-                // 4つ全部見つからなかったら、180°回転して再試行
+                // 逆さま判定: ID0(本来は左上)がID2(本来は左下)より下にあれば逆さま
+                if (!detectedResult.error && detectedResult.markerMap[0] && detectedResult.markerMap[2]) {
+                    const id0y = detectedResult.markerMap[0].y;
+                    const id2y = detectedResult.markerMap[2].y;
+                    if (id0y > id2y) {
+                        // 逆さま検出！180°回転して再処理
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = workCanvas.width;
+                        tempCanvas.height = workCanvas.height;
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCtx.translate(tempCanvas.width, tempCanvas.height);
+                        tempCtx.rotate(Math.PI);
+                        tempCtx.drawImage(workCanvas, 0, 0);
+                        workCtx.clearRect(0, 0, workCanvas.width, workCanvas.height);
+                        workCtx.drawImage(tempCanvas, 0, 0);
+                        detectedResult = detectTombo(config.tombo);
+                    }
+                }
+
+                // 一部のマーカーしか検出できなかった場合も180°回転を試行
                 if (detectedResult.error) {
-                    // workCanvasを180°回転
                     const tempCanvas = document.createElement('canvas');
                     tempCanvas.width = workCanvas.width;
                     tempCanvas.height = workCanvas.height;
@@ -257,14 +275,10 @@
                     tempCtx.translate(tempCanvas.width, tempCanvas.height);
                     tempCtx.rotate(Math.PI);
                     tempCtx.drawImage(workCanvas, 0, 0);
-                    
-                    // 回転した画像をworkCanvasに書き戻し
                     workCtx.clearRect(0, 0, workCanvas.width, workCanvas.height);
                     workCtx.drawImage(tempCanvas, 0, 0);
-                    
                     const rotatedResult = detectTombo(config.tombo);
-                    // 回転版のほうがエラーなし、または検出数が多ければそちらを採用
-                    if (!rotatedResult.error) {
+                    if (!rotatedResult.error || rotatedResult.foundCount > detectedResult.foundCount) {
                         detectedResult = rotatedResult;
                     }
                 }
@@ -298,14 +312,16 @@
         }
 
         function detectTombo(refTombo) {
-            if (typeof AR === 'undefined') return { points: refTombo.map(r => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 })), error: true };
+            if (typeof AR === 'undefined') return { points: refTombo.map(r => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 })), error: true, foundCount: 0, markerMap: {} };
 
             const imageData = workCtx.getImageData(0, 0, workCanvas.width, workCanvas.height);
             const detector = new AR.Detector();
             const markers = detector.detect(imageData);
 
             const detected = [];
+            const markerMap = {};
             let error = false;
+            let foundCount = 0;
             const requiredIds = [0, 1, 2, 3];
 
             for (let i = 0; i < requiredIds.length; i++) {
@@ -313,17 +329,18 @@
                 if (marker) {
                     let sumX = 0, sumY = 0;
                     marker.corners.forEach(c => { sumX += c.x; sumY += c.y; });
-                    // マーカーの正確な重心点を抽出
-                    detected.push({ x: sumX / 4, y: sumY / 4 });
+                    const pt = { x: sumX / 4, y: sumY / 4 };
+                    detected.push(pt);
+                    markerMap[requiredIds[i]] = pt;
+                    foundCount++;
                 } else {
-                    // 見つからない場合は設定値をフォールバックとして使用（エラーフラグはON）
                     const ref = refTombo[i] || refTombo[0];
                     detected.push({ x: ref.x + ref.w / 2, y: ref.y + ref.h / 2 });
                     error = true;
                 }
             }
 
-            return { points: detected, error };
+            return { points: detected, error, foundCount, markerMap };
         }
 
         // 4点から射影変換（ホモグラフィ）行列を計算
