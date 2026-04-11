@@ -366,10 +366,9 @@
         <div class="id-badge" id="project-id-display" style="cursor:pointer" title="クリックでIDをコピー" onclick="navigator.clipboard.writeText(projectId).then(()=>{this.textContent='✓ コピー済み';setTimeout(()=>this.textContent='ID: '+projectId,1500)})"></div>
     </div>
 
-    <div class="tabs">
         <button class="tab-btn" onclick="switchTab('tab-entries')">参加者管理</button>
         <button class="tab-btn active" onclick="switchTab('tab-sheet')">解答用紙</button>
-        <button class="tab-btn" onclick="switchTab('tab-scan')">答案読込・管理</button>
+        <button class="tab-btn" onclick="switchTab('tab-scan')">答案管理</button>
         <button class="tab-btn" onclick="switchTab('tab-model')">模範解答</button>
         <button class="tab-btn" onclick="switchTab('tab-stats')">集計・開示設定</button>
     </div>
@@ -386,11 +385,10 @@
                 </label>
             </div>
             <div id="entry-url"
-                style="font-size:13px;color:#aaa;background:#0f3460;padding:12px;border-radius:8px;margin-bottom:16px;line-height:2;">
-                エントリーURL: <a id="registration-link" href="#" target="_blank" style="color:#7c5cfc"></a>
-                <br>エントリーリスト: <a id="entry-link" href="#" target="_blank" style="color:#7c5cfc"></a>
-                <br>キャンセルフォーム: <a id="cancel-link" href="#" target="_blank" style="color:#7c5cfc"></a>
-                <br>受付ページ: <a href="checkin.html" style="color:#7c5cfc">checkin.html</a>
+                style="font-size:13px;color:#aaa;background:#0f3460;padding:12px;border-radius:8px;margin-bottom:16px;display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:center;gap:8px">エントリーフォーム: <a id="registration-link" href="#" target="_blank" style="color:#7c5cfc;word-break:break-all"></a> <button class="btn secondary" style="padding:4px 8px;font-size:11px" onclick="copyUrl('registration-link', this)">コピー</button></div>
+                <div style="display:flex;align-items:center;gap:8px">エントリーリスト: <a id="entry-link" href="#" target="_blank" style="color:#7c5cfc;word-break:break-all"></a> <button class="btn secondary" style="padding:4px 8px;font-size:11px" onclick="copyUrl('entry-link', this)">コピー</button></div>
+                <div style="display:flex;align-items:center;gap:8px">キャンセルフォーム: <a id="cancel-link" href="#" target="_blank" style="color:#7c5cfc;word-break:break-all"></a> <button class="btn secondary" style="padding:4px 8px;font-size:11px" onclick="copyUrl('cancel-link', this)">コピー</button></div>
             </div>
             <button class="btn secondary" onclick="exportEntriesCSV()">全エントリー情報CSVエクスポート</button>
         </div>
@@ -435,7 +433,7 @@
         </div>
     </div>
 
-    <!-- ==================== TAB 2: 答案読込・管理 ==================== -->
+    <!-- ==================== TAB 2: 答案管理 ==================== -->
     <div class="tab-content" id="tab-scan">
         <div class="section">
             <h2>答案PDF読み込み</h2>
@@ -553,8 +551,13 @@
             <button class="btn" onclick="generateDisclosure()" id="gen-disclosure-btn">開示データを生成</button>
             <div id="disclosure-status" class="status-msg"></div>
             <div id="disclosure-url" style="margin-top:12px;font-size:13px;color:#aaa;display:none">
-                開示URL: <a id="disclosure-link" href="#" target="_blank" style="color:#7c5cfc"></a>
+                <div style="display:flex;align-items:center;gap:8px">開示URL: <a id="disclosure-link" href="#" target="_blank" style="color:#7c5cfc;word-break:break-all"></a> <button class="btn secondary" style="padding:4px 8px;font-size:11px" onclick="copyUrl('disclosure-link', this)">コピー</button></div>
             </div>
+        </div>
+        <div class="section">
+            <h2>データバックアップ (エクスポート)</h2>
+            <p style="font-size:13px;color:#aaa;margin-bottom:16px;">プロジェクトの全データ（設定、参加者情報、採点結果など）を.ciqファイルとして書き出します。</p>
+            <button class="btn" style="background:#0f3460;border:1px solid #444;" onclick="exportProjectData()">📦 全データをエクスポート (.ciq)</button>
         </div>
         <div class="section" style="border:2px solid #c62828;">
             <h2 style="color:#ef5350;">⚠ 危険な操作</h2>
@@ -612,6 +615,19 @@
             document.getElementById('cancel-link').textContent = `${lOrigins}cancel.html?pid=${projectId}`;
             document.getElementById('disclosure-link').href = `${lOrigins}disclosure.html?pid=${projectId}`;
             document.getElementById('disclosure-link').textContent = `${lOrigins}disclosure.html?pid=${projectId}`;
+
+            window.copyUrl = function(linkId, btn) {
+                const url = document.getElementById(linkId).href;
+                navigator.clipboard.writeText(url).then(() => {
+                    const originalText = btn.textContent;
+                    btn.textContent = '完了';
+                    btn.style.background = '#4caf50';
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.style.background = '';
+                    }, 1500);
+                });
+            };
 
             const configSnap = await db.ref(`projects/${projectId}/config`).once('value');
             if (configSnap.exists()) {
@@ -1059,15 +1075,15 @@
         // データクリーンアップ処理
         // ============================
         async function purgeOldImages() {
-            // 7日以上前のanswers画像を全削除
+            // 3日以上前のanswers画像を全削除
             const snap = await db.ref(`projects/${projectId}/answers`).get();
             if (!snap.exists()) return;
             const now = Date.now();
-            const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+            const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
             const updates = {};
             snap.forEach(child => {
                 const data = child.val();
-                if (data.uploadedAt && (now - data.uploadedAt > SEVEN_DAYS)) {
+                if (data.uploadedAt && (now - data.uploadedAt > THREE_DAYS)) {
                     // 画像データのみnullにする（成績の参照番号としては残す）
                     updates[`projects/${projectId}/answers/${child.key}/pageImage`] = null;
                     updates[`projects/${projectId}/answers/${child.key}/cells`] = null;
@@ -1193,6 +1209,56 @@
                 alert('生成に失敗: ' + e.message);
             }
             btn.disabled = false; btn.textContent = '開示データを生成';
+        }
+
+        async function exportProjectData() {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            try {
+                btn.textContent = '📦 データ取得中...';
+                btn.disabled = true;
+
+                const snap = await db.ref(`projects/${projectId}`).get();
+                if (!snap.exists()) {
+                    alert('エクスポートするデータが見つかりません。');
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                    return;
+                }
+                const data = snap.val();
+                
+                // Get project name if available, else use ID
+                const pName = data.settings?.projectName || projectId;
+                
+                // JSON to Blob
+                const jsonStr = JSON.stringify(data, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                
+                // Download
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${pName}_backup.ciq`;
+                document.body.appendChild(a);
+                a.click();
+                
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+
+                btn.textContent = '✅ エクスポート完了';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }, 2000);
+
+            } catch (error) {
+                console.error("エクスポートエラー:", error);
+                alert("エクスポート中にエラーが発生しました: " + error.message);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
         }
 
         init();

@@ -1,12 +1,13 @@
 // Firebase 共通設定
 const firebaseConfig = {
-  apiKey: "AIzaSyDk-RpKCX5Hd-xNnrso_x5fd3S-vUoWKUc",
-  authDomain: "ciq-saiten.firebaseapp.com",
-  databaseURL: "https://ciq-saiten-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "ciq-saiten",
-  storageBucket: "ciq-saiten.firebasestorage.app",
-  messagingSenderId: "987606904586",
-  appId: "1:987606904586:web:b16876b8963a55a60d94f3"
+  apiKey: "AIzaSyBqp86LCsX3vGoA3Ug1aBnZbA_oQIVW614",
+  authDomain: "quziopus.firebaseapp.com",
+  projectId: "quziopus",
+  storageBucket: "quziopus.firebasestorage.app",
+  messagingSenderId: "61719920613",
+  appId: "1:61719920613:web:a7002a7378c171f98d790c",
+  measurementId: "G-FFP3YGKFDT",
+  databaseURL: "https://quziopus-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
 
 firebase.initializeApp(firebaseConfig);

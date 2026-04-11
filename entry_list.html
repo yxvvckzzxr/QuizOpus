@@ -87,7 +87,8 @@
                     <thead>
                         <tr>
                             <th>エントリー日時</th>
-                            <th>所属・学年</th>
+                            <th>所属</th>
+                            <th>学年</th>
                             <th>エントリーネーム</th>
                             <th>意気込み</th>
                         </tr>
@@ -179,7 +180,8 @@
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td class="c-time">${timeStr} <span style="color:#555;font-size:11px;margin-left:4px">#${e.entryNumber}</span></td>
-                        <td><span class="c-affil">${e.affiliation}</span> <span class="c-grade">${grade}</span></td>
+                        <td><span class="c-affil">${e.affiliation}</span></td>
+                        <td><span class="c-grade">${grade}</span></td>
                         <td class="c-name">${e.entryName}</td>
                         <td class="c-msg">${e.message || ''}</td>
                     `;
