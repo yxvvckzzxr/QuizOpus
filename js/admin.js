@@ -147,6 +147,10 @@ function showDbAuthError() {
                 Object.keys(d).forEach(q => { modelAnswers[q - 1] = d[q]; });
             }
             renderModelGrid();
+            
+            // 自動読み込み処理
+            loadAdminEntries();
+            loadEntryList();
         }
 
         // ============================
