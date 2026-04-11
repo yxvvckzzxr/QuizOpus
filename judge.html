@@ -4,72 +4,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuizOpus</title>
+    <title>QuizOpus - 問題一覧</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="js/config.js"></script>
-  <script src="js/crypto.js"></script>
+    <script src="js/crypto.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/design_system.css">
     <style>
-        .header-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+        body { padding: 24px; }
+
+        .header-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
         .header-left { display: flex; align-items: center; gap: 16px; }
-        .header-right { display: flex; align-items: center; gap: 12px; }
-        
-        .scorer-badge { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; border: 1px solid rgba(59, 130, 246, 0.4); }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+
+        .scorer-badge { background: rgba(59,130,246,0.15); color: #60a5fa; padding: 6px 16px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; border: 1px solid rgba(59,130,246,0.3); }
         .admin-bar { display: none; }
-        
-        .q-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; }
-        .q-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(8px); border-radius: 12px; padding: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; height: 100%; }
-        .q-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); background: rgba(30, 41, 59, 0.8); }
-        
-        .q-num { font-size: 20px; font-weight: 800; color: var(--text-main); margin-bottom: 12px; }
-        .q-scorers { font-size: 11px; color: var(--text-muted); min-height: 44px; margin-bottom: 12px; line-height: 1.4; display: flex; align-items: center; justify-content: center; }
-        .q-status { padding: 6px 0; border-radius: 6px; font-size: 12px; font-weight: 600; margin-top: auto; }
-        
-        .q-card.mine { border-color: rgba(59, 130, 246, 0.5); box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); }
-        .q-card.locked { opacity: 0.6; cursor: not-allowed; }
-        .q-card.done { border-color: rgba(16, 185, 129, 0.4); }
-        
+
+        .admin-dropdown { position: relative; }
+        .dropdown-content { display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; z-index: 50; background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 8px; min-width: 180px; box-shadow: var(--shadow-lg); }
+        .dropdown-content.show { display: flex; flex-direction: column; gap: 4px; }
+        .dropdown-content .btn { justify-content: flex-start; width: 100%; }
+
+        .legend {
+            display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;
+            padding: 12px 16px; border-radius: var(--radius-md);
+            background: rgba(15,23,42,0.5); border: 1px solid var(--glass-border);
+            font-size: 12px; font-weight: 600; color: var(--text-muted);
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
+
+        .q-grid { display: grid; gap: 12px; }
+
+        .q-card {
+            background: var(--glass-bg); backdrop-filter: blur(8px);
+            border-radius: var(--radius-md); padding: 14px; text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-sm); display: flex; flex-direction: column; height: 100%;
+        }
+        .q-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); background: rgba(30,41,59,0.8); }
+        .q-card.mine { border-color: rgba(59,130,246,0.5); box-shadow: 0 0 15px rgba(59,130,246,0.15); }
+        .q-card.locked { opacity: 0.5; cursor: not-allowed; }
+        .q-card.done { border-color: rgba(16,185,129,0.4); }
+        .q-card.inprogress { border-color: rgba(59,130,246,0.3); }
+
+        .q-num { font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 8px; }
+        .q-scorers { font-size: 11px; color: var(--text-muted); min-height: 40px; margin-bottom: 8px; line-height: 1.4; display: flex; align-items: center; justify-content: center; }
+        .q-status { padding: 6px 0; border-radius: var(--radius-sm); font-size: 11px; font-weight: 700; margin-top: auto; }
+
         .status-open { background: rgba(255,255,255,0.05); color: var(--text-muted); }
-        .status-inprogress { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-        .status-done { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-        .status-locked { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+        .status-inprogress { background: rgba(59,130,246,0.15); color: #60a5fa; }
+        .status-done { background: rgba(16,185,129,0.15); color: #34d399; }
+        .status-locked { background: rgba(239,68,68,0.1); color: #f87171; }
+
+        /* Snap Grid: 2 -> 5 -> 8 -> 10 */
+        .q-grid { grid-template-columns: repeat(2, 1fr); }
+        @media (min-width: 600px) { .q-grid { grid-template-columns: repeat(5, 1fr); } }
+        @media (min-width: 1024px) { .q-grid { grid-template-columns: repeat(8, 1fr); } }
+        @media (min-width: 1280px) { .q-grid { grid-template-columns: repeat(10, 1fr); } }
     </style>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="css/design_system.css">
 </head>
 
 <body>
-    <div class="top-bar">
-        <h1 id="project-title">読み込み中...</h1>
-        <div class="scorer-badge" id="scorer-badge"></div>
-        <div style="margin-left:auto; display:flex; gap:8px;">
+    <div class="header-bar">
+        <div class="header-left">
+            <h1 id="project-title"><i class="fa-solid fa-spinner fa-spin-pulse"></i> 読み込み中...</h1>
+            <div class="scorer-badge" id="scorer-badge"></div>
+        </div>
+        <div class="header-right">
             <div class="admin-dropdown" id="admin-bar" style="display:none">
                 <button class="btn secondary" onclick="document.getElementById('admin-menu').classList.toggle('show')">
-                    <i class="fa-solid fa-bars"></i>
+                    <i class="fa-solid fa-bars"></i> メニュー
                 </button>
                 <div id="admin-menu" class="dropdown-content">
-                    <button class="btn secondary" onclick="location.href='admin.html'"><i class="fa-solid fa-gear"></i> 管理画面</button>
-                    <button class="btn secondary" onclick="location.href='checkin.html'"><i class="fa-solid fa-user-check"></i> 受付</button>
+                    <button class="btn secondary" onclick="location.href='admin.html'"><i class="fa-solid fa-gauge"></i> 管理ダッシュボード</button>
+                    <button class="btn secondary" onclick="location.href='checkin.html'"><i class="fa-solid fa-qrcode"></i> 当日受付</button>
                     <button class="btn danger" onclick="location.href='conflict.html'"><i class="fa-solid fa-triangle-exclamation"></i> 要確認一覧</button>
                 </div>
             </div>
-            <button class="btn secondary" onclick="logout()">ログアウト</button>
+            <button class="btn secondary" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> ログアウト</button>
         </div>
     </div>
 
     <div class="legend">
-        <div class="legend-item">
-            <div class="legend-dot" style="background:#16213e;border:1px solid #444"></div>未着手
-        </div>
-        <div class="legend-item">
-            <div class="legend-dot" style="background:#0d2a5e"></div>採点中
-        </div>
-        <div class="legend-item">
-            <div class="legend-dot" style="background:#1b3a1f"></div>完了
-        </div>
-        <div class="legend-item">
-            <div class="legend-dot" style="border:2px solid #2196f3;background:transparent"></div>自分が担当
-        </div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1)"></div> 未着手</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(59,130,246,0.3)"></div> 採点中</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(16,185,129,0.3)"></div> 完了</div>
+        <div class="legend-item"><div class="legend-dot" style="border:2px solid #3b82f6;background:transparent"></div> 自分が担当</div>
     </div>
 
     <div class="q-grid" id="q-grid"></div>

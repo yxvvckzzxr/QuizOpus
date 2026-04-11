@@ -3,87 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuizOpus</title>
+    <title>QuizOpus - 当日受付</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="js/config.js"></script>
-  <script src="js/crypto.js"></script>
+    <script src="js/crypto.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/design_system.css">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
+        body { padding: 24px; display: flex; flex-direction: column; align-items: center; }
+
         .top-bar {
             width: 100%; max-width: 500px;
             display: flex; align-items: center; gap: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
-        h1 { font-size: 22px; flex: 1; }
-        .btn {
-            padding: 8px 16px; border-radius: 8px; border: none;
-            color: white; font-size: 14px; cursor: pointer;
-        }
-        .btn.secondary { background: #0f3460; border: 1px solid #444; }
-        .btn.secondary:hover { background: #1a4a7a; }
+        .top-bar h1 { font-size: 22px; flex: 1; }
 
         #camera-container { position: relative; width: 100%; max-width: 500px; }
-        #video { width: 100%; border-radius: 12px; border: 3px solid #444; background: #000; }
+        #video {
+            width: 100%; border-radius: var(--radius-lg);
+            border: 2px solid var(--glass-border); background: #000;
+        }
         #canvas { display: none; }
+
+        #scanning-text {
+            margin-top: 12px; color: var(--text-muted); font-size: 14px;
+            text-align: center; font-weight: 600;
+        }
 
         #result {
             margin-top: 16px; width: 100%; max-width: 500px;
-            padding: 20px; border-radius: 12px;
-            text-align: center; font-size: 20px; display: none;
+            padding: 20px; border-radius: var(--radius-lg);
+            text-align: center; font-size: 18px; display: none;
+            font-weight: 600;
         }
-        #result.success { background: #1b5e20; border: 2px solid #4caf50; }
-        #result.error { background: #b71c1c; border: 2px solid #ef5350; }
-        #result.already { background: #e65100; border: 2px solid #ff9800; }
-        #result.canceled { background: #b71c1c; border: 2px solid #ef5350; }
-        #result.loading { background: #1a237e; border: 2px solid #3f51b5; }
-        .name { font-size: 28px; font-weight: bold; margin: 10px 0; }
-        .number { font-size: 18px; color: #aaa; }
-
-        #scanning-text { margin-top: 12px; color: #aaa; font-size: 14px; }
+        #result.success { background: rgba(16,185,129,0.15); border: 2px solid rgba(16,185,129,0.5); color: #34d399; }
+        #result.error { background: rgba(239,68,68,0.15); border: 2px solid rgba(239,68,68,0.5); color: #f87171; }
+        #result.already { background: rgba(245,158,11,0.15); border: 2px solid rgba(245,158,11,0.5); color: #fbbf24; }
+        #result.canceled { background: rgba(239,68,68,0.15); border: 2px solid rgba(239,68,68,0.5); color: #f87171; }
+        #result.loading { background: rgba(59,130,246,0.15); border: 2px solid rgba(59,130,246,0.5); color: #60a5fa; }
+        .name { font-size: 28px; font-weight: 800; margin: 10px 0; color: var(--text-main); }
+        .number { font-size: 16px; color: var(--text-muted); }
 
         .stats-bar {
-            margin-top: 20px; padding: 16px; background: #16213e;
-            border-radius: 12px; width: 100%; max-width: 500px;
+            margin-top: 24px; width: 100%; max-width: 500px;
         }
-        .stats-bar h3 { font-size: 14px; color: #aaa; margin-bottom: 8px; }
-        .stats-row { display: flex; justify-content: space-around; }
-        .stat-item { text-align: center; }
-        .stat-num { font-size: 28px; font-weight: bold; }
-        .stat-label { font-size: 12px; color: #aaa; }
+        .stats-bar h3 { font-size: 14px; color: var(--text-muted); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; }
+        .stats-row { display: flex; justify-content: space-around; gap: 16px; }
+        .stat-item {
+            text-align: center; flex: 1; padding: 16px;
+        }
+        .stat-item .stat-num { font-size: 28px; font-weight: 800; }
+        .stat-item .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 600; }
     </style>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="css/design_system.css">
 </head>
 <body>
     <div class="top-bar">
-        <button class="btn secondary" onclick="location.href='judge.html'">← 戻る</button>
-        <h1 id="page-title">当日受付</h1>
+        <button class="btn secondary" onclick="location.href='judge.html'"><i class="fa-solid fa-arrow-left"></i> 戻る</button>
+        <h1 id="page-title"><i class="fa-solid fa-qrcode"></i> 当日受付</h1>
     </div>
 
     <div id="camera-container">
         <video id="video" autoplay playsinline></video>
         <canvas id="canvas"></canvas>
     </div>
-    <p id="scanning-text">QRコードをカメラにかざしてください</p>
+    <p id="scanning-text"><i class="fa-solid fa-camera"></i> QRコードをカメラにかざしてください</p>
     <div id="result"></div>
 
-    <div class="stats-bar" id="stats-bar" style="display:none;">
-        <h3>受付状況</h3>
+    <div class="stats-bar glass-panel" id="stats-bar" style="display:none;">
+        <h3><i class="fa-solid fa-chart-bar"></i> 受付状況</h3>
         <div class="stats-row">
-            <div class="stat-item">
-                <div class="stat-num" id="stat-total">-</div>
-                <div class="stat-label">エントリー数</div>
+            <div class="stat-item glass-panel">
+                <div class="stat-num" id="stat-total" style="color: var(--primary)">-</div>
+                <div class="stat-label"><i class="fa-solid fa-users"></i> エントリー数</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-num" id="stat-checked" style="color:#4caf50">-</div>
-                <div class="stat-label">受付済み</div>
+            <div class="stat-item glass-panel">
+                <div class="stat-num" id="stat-checked" style="color: #34d399">-</div>
+                <div class="stat-label"><i class="fa-solid fa-check"></i> 受付済み</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-num" id="stat-remaining" style="color:#ff9800">-</div>
-                <div class="stat-label">未受付</div>
+            <div class="stat-item glass-panel">
+                <div class="stat-num" id="stat-remaining" style="color: #fbbf24">-</div>
+                <div class="stat-label"><i class="fa-solid fa-clock"></i> 未受付</div>
             </div>
         </div>
     </div>

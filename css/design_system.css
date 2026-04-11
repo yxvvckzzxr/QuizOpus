@@ -201,3 +201,51 @@ table tbody tr:hover {
 }
 .error-dialog h2 { color: #f87171; margin-bottom: 12px; }
 .error-dialog p { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
+
+/* Icon Grids & Responsive Snap Grids */
+.snap-grid {
+  display: grid;
+  gap: 16px;
+}
+
+/* Base: Mobile (For narrow screens) */
+.snap-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* Tablet (Medium) */
+@media (min-width: 600px) {
+  .snap-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* Small Desktop (Large) */
+@media (min-width: 1024px) {
+  .snap-grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+}
+
+/* Wide Desktop (X-Large) */
+@media (min-width: 1280px) {
+  .snap-grid {
+    grid-template-columns: repeat(10, 1fr);
+  }
+}
+
+/* Icon text helpers */
+i.icon-text { margin-right: 6px; }
+.card-icon-header {
+  font-size: 32px;
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+.stat-card.glass-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 24px;
+}

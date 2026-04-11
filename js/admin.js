@@ -595,7 +595,7 @@ function showDbAuthError() {
         async function updateProjectName() {
             const name = document.getElementById('setting-project-name').value.trim();
             if(!name) return showAdminToast('プロジェクト名を入力してください');
-            await db.ref(`projects/${projectId}/settings/projectName`).set(name);
+            await db.ref(`projects/${projectId}/publicSettings/projectName`).set(name);
             showAdminToast('プロジェクト名を更新しました', 'success');
         }
 
@@ -654,8 +654,8 @@ function showDbAuthError() {
                     
                     const tr = document.createElement('tr');
                     if (v.status === 'canceled') tr.style.opacity = '0.5';
-                    const statText = v.status === 'canceled' ? '<span class="badge danger">ｷｬﾝｾﾙ</span>'
-                        : v.checkedIn ? '<span class="badge success">受付済</span>' : '<span class="badge muted">未受付</span>';
+                    const statText = v.status === 'canceled' ? '<span class="badge danger"><i class="fa-solid fa-xmark"></i> キ</span>'
+                        : v.checkedIn ? '<span class="badge success"><i class="fa-solid fa-check"></i> 受付済</span>' : '<span class="badge muted"><i class="fa-regular fa-clock"></i> 未受付</span>';
 
                     tr.innerHTML = `
                     <td >${v.entryNumber || '-'}</td>

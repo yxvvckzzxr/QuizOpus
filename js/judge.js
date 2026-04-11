@@ -34,7 +34,7 @@ const projectId = session.projectId;
             if (snapConfig.exists()) {
                 totalQuestions = snapConfig.val().questionCount || 100;
             }
-            const snapSettings = await db.ref(`projects/${projectId}/settings`).once('value');
+            const snapSettings = await db.ref(`projects/${projectId}/publicSettings`).once('value');
             if (snapSettings.exists()) {
                 const settings = snapSettings.val();
                 document.getElementById('project-title').textContent = settings.projectName || '問題一覧';
@@ -136,16 +136,16 @@ const projectId = session.projectId;
 
                 if (isFull && !isMine) {
                     statusEl.className = 'q-status status-locked';
-                    statusEl.textContent = '満員';
+                    statusEl.innerHTML = '<i class="fa-solid fa-ban"></i> 満員';
                 } else if (allDone) {
                     statusEl.className = 'q-status status-done';
-                    statusEl.textContent = '完了';
+                    statusEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> 完了';
                 } else if (scorerList.length > 0) {
                     statusEl.className = 'q-status status-inprogress';
-                    statusEl.textContent = `採点中 ${scorerList.length}/3`;
+                    statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin-pulse"></i> 採点中 ${scorerList.length}/3`;
                 } else {
                     statusEl.className = 'q-status status-open';
-                    statusEl.textContent = '未着手';
+                    statusEl.innerHTML = '<i class="fa-regular fa-circle"></i> 未着手';
                 }
             }
         }
