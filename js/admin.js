@@ -124,14 +124,17 @@ function showDbAuthError() {
             }
             document.getElementById('stat-total').textContent = totalQuestions;
 
-            // エントリ番号取得
+            // エントリ番号取得（SDKでキーのみ列挙）
             try {
-                const res = await fetch(`https://ciq-saiten-default-rtdb.asia-southeast1.firebasedatabase.app/projects/${projectId}/answers.json?shallow=true`);
-                const data = await res.json();
-                if (data) entryNumbers = Object.keys(data).map(Number).sort((a, b) => a - b);
+                const answersRef = db.ref(`projects/${projectId}/protected/${secretHash}/answers`);
+                const keysSnap = await answersRef.orderByKey().once('value');
+                if (keysSnap.exists()) {
+                    entryNumbers = [];
+                    keysSnap.forEach(child => { entryNumbers.push(Number(child.key)); });
+                    entryNumbers.sort((a, b) => a - b);
+                }
             } catch (e) {
-                const snap = await db.ref(`projects/${projectId}/protected/${secretHash}/answers`).get();
-                if (snap.exists()) entryNumbers = Object.keys(snap.val()).map(Number).sort((a, b) => a - b);
+                console.error('エントリ番号取得エラー:', e);
             }
 
             // スコアリアルタイム
@@ -416,12 +419,16 @@ function showDbAuthError() {
             const el = document.getElementById('entry-list');
             el.innerHTML = '<div style="color:#aaa">読み込み中...</div>';
             try {
-                const res = await fetch(`https://ciq-saiten-default-rtdb.asia-southeast1.firebasedatabase.app/projects/${projectId}/answers.json?shallow=true`);
-                const data = await res.json();
-                entryListData = data ? Object.keys(data).map(Number).sort((a, b) => a - b) : [];
+                const answersRef = db.ref(`projects/${projectId}/protected/${secretHash}/answers`);
+                const keysSnap = await answersRef.orderByKey().once('value');
+                entryListData = [];
+                if (keysSnap.exists()) {
+                    keysSnap.forEach(child => { entryListData.push(Number(child.key)); });
+                    entryListData.sort((a, b) => a - b);
+                }
             } catch (e) {
-                const snap = await db.ref(`projects/${projectId}/protected/${secretHash}/answers`).get();
-                entryListData = snap.exists() ? Object.keys(snap.val()).map(Number).sort((a, b) => a - b) : [];
+                console.error('答案リスト読み込みエラー:', e);
+                entryListData = [];
             }
             entryNumbers = [...entryListData]; // 全体のentryNumbersも更新
             let masterData = {};
