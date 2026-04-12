@@ -20,11 +20,13 @@ let totalQuestions = 100;
             // Firebaseのentriesから参加者情報を取得してマスタとして保持 (オプション)
             fetchEntriesMaster();
 
-            document.getElementById('dropdown-scorer-name').textContent = scorerName;
-            document.getElementById('dropdown-scorer-role').innerHTML = scorerRole === 'admin' ? '<i class="fa-solid fa-crown"></i> 管理者' : '<i class="fa-solid fa-user-check"></i> 採点者';
+            document.getElementById('menu-scorer-name').textContent = scorerName;
+            document.getElementById('menu-scorer-role').innerHTML = scorerRole === 'admin'
+                ? '<span class="menu-role-badge admin"><i class="fa-solid fa-crown"></i> 管理者</span>'
+                : '<span class="menu-role-badge scorer"><i class="fa-solid fa-user-check"></i> 採点者</span>';
 
             if (scorerRole === 'admin') {
-                document.getElementById('admin-menu-items').style.display = 'flex';
+                document.getElementById('admin-menu-section').style.display = 'block';
             }
 
             const qGrid = document.getElementById('q-grid');

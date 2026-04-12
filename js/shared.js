@@ -94,13 +94,28 @@ async function showPreview(projectId, secretHash, entryNum) {
     }
 }
 
-// Escキーでプレビューを閉じる
+// Escキーでプレビュー/メニューを閉じる
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
         const o = document.getElementById('preview-overlay');
         if (o) o.style.display = 'none';
+        const panel = document.getElementById('menu-panel');
+        if (panel && panel.classList.contains('open')) toggleMenu();
     }
 });
+
+/**
+ * スライドパネルメニューの開閉
+ */
+function toggleMenu() {
+    const panel = document.getElementById('menu-panel');
+    const backdrop = document.getElementById('menu-backdrop');
+    if (!panel || !backdrop) return;
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open', !isOpen);
+    backdrop.classList.toggle('active', !isOpen);
+    document.body.style.overflow = isOpen ? '' : 'hidden';
+}
 
 /**
  * 認証チェック。セッション不正なら index.html へリダイレクト。
