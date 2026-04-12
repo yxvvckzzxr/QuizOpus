@@ -108,33 +108,22 @@ const projectId = session.projectId;
                 const displayName = masterData[entryNum]?.name || `受付番号 ${entryNum}`;
 
                 const card = document.createElement('div');
-                card.className = `conflict-card ${finalResult ? 'resolved' : ''} ${idx === selectedIndex ? 'selected' : ''}`;
+                card.className = `conflict-card ${finalResult ? 'resolved ' + finalResult : ''} ${idx === selectedIndex ? 'selected' : ''}`;
 
-                const votesHtml = Object.entries(qScores).map(([name, val]) => {
-                    let voteText = '';
-                    let voteClass = '';
-                    if (val === 'correct') { voteText = '○'; voteClass = 'vote-correct'; }
-                    else if (val === 'wrong') { voteText = '×'; voteClass = 'vote-wrong'; }
-                    else if (val === 'hold') { voteText = '△'; voteClass = 'vote-hold'; }
-                    return `
-          <div class="vote-item">
-            <span>${name}</span>
-            <span class="${voteClass}">
-              ${voteText}
-            </span>
-          </div>`;
-                }).join('');
+                const votesHtml = Object.values(qScores).map(val => {
+                    if (val === 'correct') return `<span class="vote-dot correct">○</span>`;
+                    if (val === 'wrong') return `<span class="vote-dot wrong">×</span>`;
+                    if (val === 'hold') return `<span class="vote-dot hold">△</span>`;
+                    return '';
+                }).join(' ');
 
                 card.innerHTML = `
-          <div class="card-header">
-            <div class="q-tag">${q}問</div>
-            <div class="entry-tag">${displayName}</div>
-          </div>
-          <img class="answer-img" src="${imageData || ''}" alt="${displayName} ${q}問" loading="lazy" />
-          ${modelAnswer ? `<div class="model-answer">${modelAnswer}</div>` : ''}
-          <div class="scorer-votes">${votesHtml}</div>
-          ${finalResult ? `<div class="final-result ${finalResult}">判定: ${finalResult === 'correct' ? '○' : '×'}</div>` : ''}
-        `;
+                  <img src="${imageData || ''}" alt="${displayName} ${q}問" loading="lazy" />
+                  <div class="q-tag-badge">${q}問</div>
+                  ${modelAnswer ? `<div class="model-ans-badge" title="${modelAnswer}">${modelAnswer}</div>` : ''}
+                  <div class="entry-num">${displayName}</div>
+                  <div class="votes-mini">${votesHtml}</div>
+                `;
                 card.addEventListener('click', () => selectConflictCard(idx));
                 card.addEventListener('dblclick', () => showPreview(entryNum));
                 grid.appendChild(card);

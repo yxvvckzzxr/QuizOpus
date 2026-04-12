@@ -10,7 +10,10 @@
     <script src="js/config.js"></script>
   <script src="js/crypto.js"></script>
     <style>
-        .fixed-header { position: fixed; top: 0; left: 0; right: 0; background: rgba(15, 36, 64, 0.9); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; z-index: 100; box-shadow: var(--shadow-md); }
+        .fixed-header { position: fixed; top: 0; left: 0; right: 0; background: rgba(15, 36, 64, 0.9); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 12px 20px; display: grid; grid-template-columns: 120px 1fr 120px; gap: 12px; align-items: center; z-index: 100; box-shadow: var(--shadow-md); }
+        .fixed-header .header-left, .fixed-header .header-right { display: flex; align-items: center; }
+        .fixed-header .header-right { justify-content: flex-end; }
+        .fixed-header .header-center { display: flex; align-items: center; justify-content: center; gap: 12px; }
         .q-badge { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 6px 16px; border-radius: var(--radius-pill); font-weight: 800; font-size: 16px; border: 1px solid rgba(59, 130, 246, 0.4); }
         .answer-badge { font-size: 24px; font-weight: bold; letter-spacing: 2px; }
         .progress-text { color: var(--text-muted); font-size: 13px; font-weight: 600; }
@@ -57,12 +60,16 @@
 
 <body>
     <div class="fixed-header">
-        <button class="btn secondary" onclick="location.href='judge.html'" style="flex-shrink:0">← 一覧へ</button>
-        <div style="display:flex;align-items:center;gap:12px;flex:1;justify-content:center">
+        <div class="header-left">
+            <button class="btn secondary" onclick="location.href='judge.html'" style="padding:6px 12px;font-size:13px"><i class="fa-solid fa-arrow-left"></i> 一覧へ</button>
+        </div>
+        <div class="header-center">
             <div class="q-badge" id="q-badge">- 問</div>
             <div class="answer-badge" id="answer-badge">...</div>
         </div>
-        <div class="progress-text" id="progress-text" style="flex-shrink:0"></div>
+        <div class="header-right">
+            <div class="progress-text" id="progress-text"></div>
+        </div>
     </div>
 
     <div class="answer-grid" id="answer-grid">
