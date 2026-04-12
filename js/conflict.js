@@ -81,8 +81,14 @@ const projectId = session.projectId;
             if (selectedIndex >= conflicts.length) selectedIndex = Math.max(0, conflicts.length - 1);
 
             const unresolvedCount = conflicts.filter(c => !c.finalResult).length;
-            document.getElementById('counter').textContent =
-                `未確定 ${unresolvedCount}件 / 全${conflicts.length}件`;
+            const counter = document.getElementById('counter');
+            if (unresolvedCount === 0) {
+                counter.textContent = `全${conflicts.length}件 確定済み`;
+                counter.className = 'counter all-clear';
+            } else {
+                counter.textContent = `残 ${unresolvedCount} / ${conflicts.length}件`;
+                counter.className = 'counter has-conflicts';
+            }
 
             const grid = document.getElementById('conflict-grid');
 

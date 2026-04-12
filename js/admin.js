@@ -535,19 +535,48 @@ function showDbAuthError() {
         // ============================
         // TAB 3: 模範解答
         // ============================
+        let dragSrcIdx = null;
         function renderModelGrid() {
             const grid = document.getElementById('model-answer-grid'); grid.innerHTML = '';
             modelAnswers.forEach((ans, i) => {
                 const item = document.createElement('div'); item.className = 'model-cell';
-                item.style.cursor = 'pointer';
+                item.style.cursor = 'grab';
+                item.draggable = true;
+                item.dataset.idx = i;
                 item.innerHTML = `<div class="q-label"><i class="fa-solid fa-hashtag"></i>${i + 1}</div><div class="q-answer" style="${ans ? '' : 'color:var(--text-muted);font-style:italic'}">${ans || '—'}</div>`;
+
+                // ドラッグ開始
+                item.addEventListener('dragstart', e => {
+                    dragSrcIdx = i;
+                    item.style.opacity = '0.4';
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+                item.addEventListener('dragend', () => { item.style.opacity = '1'; });
+
+                // ドロップ先
+                item.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; item.style.borderColor = 'var(--primary)'; });
+                item.addEventListener('dragleave', () => { item.style.borderColor = ''; });
+                item.addEventListener('drop', async e => {
+                    e.preventDefault();
+                    item.style.borderColor = '';
+                    if (dragSrcIdx === null || dragSrcIdx === i) return;
+                    // 配列内の要素を移動
+                    const moved = modelAnswers.splice(dragSrcIdx, 1)[0];
+                    modelAnswers.splice(i, 0, moved);
+                    dragSrcIdx = null;
+                    renderModelGrid();
+                    await saveModelAnswers();
+                    showAdminToast('並び替えを保存しました', 'success');
+                });
+
+                // クリックで編集
                 item.addEventListener('click', () => {
-                    // 既に編集中なら無視
                     if (item.querySelector('input')) return;
                     const ansDiv = item.querySelector('.q-answer');
                     const current = modelAnswers[i] || '';
                     ansDiv.innerHTML = `<input type="text" value="${current}" style="width:100%;padding:4px 6px;font-size:16px;font-weight:800;text-align:center;border:2px solid var(--primary);border-radius:6px;background:rgba(0,0,0,0.3);color:white;outline:none;" />`;
                     const input = ansDiv.querySelector('input');
+                    item.draggable = false; // 編集中はドラッグ無効
                     input.focus();
                     input.select();
                     const save = async () => {
@@ -555,10 +584,11 @@ function showDbAuthError() {
                         modelAnswers[i] = newVal;
                         ansDiv.style = newVal ? '' : 'color:var(--text-muted);font-style:italic';
                         ansDiv.textContent = newVal || '—';
+                        item.draggable = true;
                         await saveModelAnswers();
                     };
                     input.addEventListener('blur', save);
-                    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } if (e.key === 'Escape') { ansDiv.textContent = current || '—'; } });
+                    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } if (e.key === 'Escape') { ansDiv.textContent = current || '—'; item.draggable = true; } });
                 });
                 grid.appendChild(item);
             });
