@@ -15,12 +15,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/design_system.css">
     <style>
-        body { padding: 24px; }
+        body { padding: 0; }
         .admin-container { width: 100%; margin: 0 auto; }
 
-        .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
-        .top-bar h1 { font-size: 22px; }
+        .fixed-header { position: fixed; top: 0; left: 0; right: 0; background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); border-bottom: 1px solid var(--glass-border); padding: 12px 20px; display: grid; grid-template-columns: 120px 1fr 120px; gap: 12px; align-items: center; z-index: 100; box-shadow: var(--shadow-md); }
+        .fixed-header .header-left, .fixed-header .header-right { display: flex; align-items: center; }
+        .fixed-header .header-right { justify-content: flex-end; }
+        .fixed-header .header-center { display: flex; align-items: center; justify-content: center; gap: 12px; }
+        .fixed-header .header-center h1 { font-size: 18px; margin: 0; white-space: nowrap; }
 
+        .admin-body { margin-top: 60px; padding: 24px; }
         .tabs { display: flex; gap: 4px; margin-bottom: 24px; overflow-x: auto; padding: 4px; background: rgba(15,23,42,0.5); border-radius: var(--radius-md); border: 1px solid var(--glass-border); }
         .tab-btn { padding: 10px 14px; background: transparent; border: none; color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; border-radius: var(--radius-sm); transition: all 0.2s; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
         .tab-btn.active { color: white; background: rgba(59,130,246,0.2); }
@@ -201,22 +205,28 @@
 </head>
 
 <body>
-    <div class="admin-container">
-        <div id="admin-toast" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:10000; color:white; padding:12px 24px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.3); font-size:14px; text-align:center;"></div>
-
-        <div class="top-bar">
-            <button class="btn secondary" onclick="location.href='judge.html'"><i class="fa-solid fa-arrow-left"></i> 戻る</button>
+    <div class="fixed-header">
+        <div class="header-left">
+            <button class="btn secondary" onclick="location.href='judge.html'" style="padding:6px 12px;font-size:13px"><i class="fa-solid fa-arrow-left"></i> 戻る</button>
+        </div>
+        <div class="header-center">
             <h1><i class="fa-solid fa-gear"></i> 管理画面</h1>
+        </div>
+        <div class="header-right">
             <div class="id-copy-badge" id="project-id-display" title="クリックでコピー" onclick="navigator.clipboard.writeText(projectId).then(()=>{this.innerHTML='<i class=&quot;fa-solid fa-check&quot;></i> コピー済み';setTimeout(()=>this.innerHTML='<i class=&quot;fa-solid fa-copy&quot;></i> '+projectId,1500)})"></div>
         </div>
+    </div>
+
+    <div class="admin-container">
+        <div id="admin-toast" style="display:none; position:fixed; top:80px; left:50%; transform:translateX(-50%); z-index:10000; color:white; padding:12px 24px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.3); font-size:14px; text-align:center;"></div>
+
+        <div class="admin-body">
 
         <div class="tabs">
             <button class="tab-btn" onclick="switchTab('tab-entries')"><i class="fa-solid fa-users"></i> 参加者</button>
-            <button class="tab-btn active" onclick="switchTab('tab-sheet')"><i class="fa-solid fa-file-lines"></i> 回答用紙</button>
+            <button class="tab-btn active" onclick="switchTab('tab-prep')"><i class="fa-solid fa-file-lines"></i> 採点準備</button>
             <button class="tab-btn" onclick="switchTab('tab-scan')"><i class="fa-solid fa-camera"></i> 答案管理</button>
-            <button class="tab-btn" onclick="switchTab('tab-model')"><i class="fa-solid fa-spell-check"></i> 模範解答</button>
             <button class="tab-btn" onclick="switchTab('tab-stats')"><i class="fa-solid fa-chart-pie"></i> 集計</button>
-            <button class="tab-btn" onclick="switchTab('tab-settings')"><i class="fa-solid fa-wrench"></i> 設定</button>
         </div>
 
         <!-- ==================== TAB 0: 参加者管理 ==================== -->
@@ -291,10 +301,17 @@
                     </table>
                 </div>
             </div>
+            <div class="section glass-panel">
+                <h2><i class="fa-solid fa-signature"></i> プロジェクト設定</h2>
+                <div style="display:flex;gap:12px;align-items:center;">
+                    <input type="text" id="setting-project-name" placeholder="プロジェクト名を入力" style="flex:1;" />
+                    <button class="btn" style="width:auto;padding:0 24px;" onclick="updateProjectName()"><i class="fa-solid fa-arrows-rotate"></i> 更新</button>
+                </div>
+            </div>
         </div>
 
-        <!-- ==================== TAB 1: 回答用紙 ==================== -->
-        <div class="tab-content active" id="tab-sheet">
+        <!-- ==================== TAB 1: 採点準備（回答用紙＋模範解答） ==================== -->
+        <div class="tab-content active" id="tab-prep">
             <div class="section glass-panel">
                 <h2><i class="fa-solid fa-file-pdf"></i> 回答用紙の生成</h2>
                 <label><i class="fa-solid fa-list-ol"></i> 問題数</label>
@@ -305,6 +322,29 @@
                 </div>
                 <div style="font-size:12px;color:var(--text-muted);margin-top:6px"><i class="fa-solid fa-circle-info"></i> 10の倍数で指定 / 列数は5固定</div>
                 <button class="btn" style="margin-top:20px" onclick="generatePDF()"><i class="fa-solid fa-download"></i> ダウンロード</button>
+            </div>
+
+            <div class="section glass-panel">
+                <h2><i class="fa-solid fa-spell-check"></i> 模範解答の登録</h2>
+                <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+                    <div style="flex:1;min-width:250px">
+                        <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6">
+                            <i class="fa-solid fa-circle-info"></i> CSVファイルをアップロードして模範解答を一括登録します。
+                        </p>
+                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;background:rgba(15,23,42,0.5);padding:12px;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
+                            <div style="margin-bottom:6px;font-weight:700"><i class="fa-solid fa-file-csv"></i> 対応フォーマット</div>
+                            <div>番号付き: <code style="color:#60a5fa">1,東京</code></div>
+                            <div>番号なし: 1行目＝第1問、2行目＝第2問…</div>
+                        </div>
+                        <div class="file-upload-zone" onclick="document.getElementById('csv-file').click()" style="padding:16px">
+                            <i class="fa-solid fa-file-csv"></i>
+                            <div class="file-label">CSVファイルを選択</div>
+                            <div class="file-name" id="csv-file-name"></div>
+                            <input type="file" id="csv-file" accept=".csv" onchange="document.getElementById('csv-file-name').textContent=this.files[0]?.name||'';document.getElementById('csv-file-name').style.display=this.files[0]?'block':'none';loadCSV()" />
+                        </div>
+                    </div>
+                </div>
+                <div class="model-grid" id="model-answer-grid" style="display:grid;gap:8px;margin-top:16px"></div>
             </div>
         </div>
 
@@ -339,31 +379,7 @@
             </div>
         </div>
 
-        <!-- ==================== TAB 3: 模範解答 ==================== -->
-        <div class="tab-content" id="tab-model">
-            <div class="section glass-panel">
-                <h2><i class="fa-solid fa-spell-check"></i> 模範解答の登録</h2>
-                <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
-                    <div style="flex:1;min-width:250px">
-                        <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6">
-                            <i class="fa-solid fa-circle-info"></i> CSVファイルをアップロードして模範解答を一括登録します。
-                        </p>
-                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;background:rgba(15,23,42,0.5);padding:12px;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
-                            <div style="margin-bottom:6px;font-weight:700"><i class="fa-solid fa-file-csv"></i> 対応フォーマット</div>
-                            <div>番号付き: <code style="color:#60a5fa">1,東京</code></div>
-                            <div>番号なし: 1行目＝第1問、2行目＝第2問…</div>
-                        </div>
-                        <div class="file-upload-zone" onclick="document.getElementById('csv-file').click()" style="padding:16px">
-                            <i class="fa-solid fa-file-csv"></i>
-                            <div class="file-label">CSVファイルを選択</div>
-                            <div class="file-name" id="csv-file-name"></div>
-                            <input type="file" id="csv-file" accept=".csv" onchange="document.getElementById('csv-file-name').textContent=this.files[0]?.name||'';document.getElementById('csv-file-name').style.display=this.files[0]?'block':'none';loadCSV()" />
-                        </div>
-                    </div>
-                </div>
-                <div class="model-grid" id="model-answer-grid" style="display:grid;gap:8px;margin-top:16px"></div>
-            </div>
-        </div>
+
 
         <!-- ==================== TAB 4: 集計 ==================== -->
         <div class="tab-content" id="tab-stats">
@@ -437,17 +453,8 @@
             </div>
         </div>
 
-        <!-- ==================== TAB 5: 設定 ==================== -->
-        <div class="tab-content" id="tab-settings">
-            <div class="section glass-panel">
-                <h2><i class="fa-solid fa-signature"></i> プロジェクト名</h2>
-                <div style="display:flex;gap:12px;margin-bottom:24px;">
-                    <input type="text" id="setting-project-name" placeholder="新しいプロジェクト名" style="flex:1;" />
-                    <button class="btn" style="width:auto;padding:0 24px;" onclick="updateProjectName()"><i class="fa-solid fa-arrows-rotate"></i> 更新</button>
-                </div>
-
-            </div>
-        </div>
+    </div>
+    </div>
     </div>
     
     <!-- 全画面保存オーバーレイ -->

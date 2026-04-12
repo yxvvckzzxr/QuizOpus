@@ -82,7 +82,7 @@ function showDbAuthError() {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             const btns = document.querySelectorAll('.tab-btn');
-            const tabs = ['tab-entries', 'tab-sheet', 'tab-scan', 'tab-model', 'tab-stats', 'tab-settings'];
+            const tabs = ['tab-entries', 'tab-prep', 'tab-scan', 'tab-stats'];
             btns[tabs.indexOf(tabId)]?.classList.add('active');
         }
 
@@ -137,6 +137,9 @@ function showDbAuthError() {
                 const cfg = configSnap.val();
                 totalQuestions = cfg.questionCount || 100;
                 document.getElementById('question-count').value = totalQuestions;
+            } else {
+                // 初期値として100問を保存
+                await db.ref(`projects/${projectId}/protected/${secretHash}/config`).set({ questionCount: 100 });
             }
 
             const entryConfigSnap = await db.ref(`projects/${projectId}/protected/${secretHash}/entryConfig`).once('value');
