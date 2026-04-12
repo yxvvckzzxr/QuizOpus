@@ -424,7 +424,7 @@ function showDbAuthError() {
             }
             entryNumbers = [...entryListData]; // 全体のentryNumbersも更新
             let masterData = {};
-            try { masterData = JSON.parse(localStorage.getItem('masterData') || '{}'); } catch (e) { }
+            try { masterData = JSON.parse(localStorage.getItem(`masterData_${projectId}`) || '{}'); } catch (e) { }
 
             // カウントバッジ更新
             document.getElementById('entry-count-badge').textContent = `${entryListData.length}件`;
@@ -466,6 +466,11 @@ function showDbAuthError() {
                     card.classList.toggle('selected', cb.checked);
                     updateBatchBtn();
                 });
+                // ダブルクリックでページプレビュー
+                card.addEventListener('dblclick', (e) => {
+                    if (e.target.closest('.scan-cb')) return; // チェックボックスは除外
+                    showEntryPreview(num);
+                });
                 grid.appendChild(card);
             });
             el.appendChild(grid);
@@ -502,6 +507,29 @@ function showDbAuthError() {
             loadEntryList();
         }
 
+        async function showEntryPreview(num) {
+            let overlay = document.getElementById('admin-preview-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'admin-preview-overlay';
+                overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(10px);z-index:10000;display:none;overflow-y:auto;padding:24px;';
+                document.body.appendChild(overlay);
+            }
+            let masterData = {};
+            try { masterData = JSON.parse(localStorage.getItem(`masterData_${projectId}`) || '{}'); } catch (e) { }
+            const name = masterData[num]?.name || `No.${num}`;
+            overlay.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;"><h2 style="color:white;font-size:18px"><i class="fa-solid fa-file-image"></i> ${name} の解答用紙</h2><button class="btn secondary" onclick="document.getElementById('admin-preview-overlay').style.display='none'">✕ 閉じる</button></div><div id="admin-preview-content" style="text-align:center"><div style="color:#aaa"><i class="fa-solid fa-spinner fa-spin"></i> 読み込み中...</div></div>`;
+            overlay.style.display = 'block';
+            const snap = await db.ref(`projects/${projectId}/protected/${secretHash}/answers/${num}/pageImage`).get();
+            const pc = document.getElementById('admin-preview-content');
+            if (snap.exists()) {
+                pc.innerHTML = `<img src="${snap.val()}" alt="${name}" style="max-width:100%;max-height:85vh;border-radius:8px;background:white;box-shadow:0 4px 24px rgba(0,0,0,0.5)">`;
+            } else {
+                pc.innerHTML = '<div style="color:#aaa;padding:40px">ページ画像が保存されていません。答案を再読み込みしてください。</div>';
+            }
+        }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') { const o = document.getElementById('admin-preview-overlay'); if (o) o.style.display = 'none'; }});
+
         // ============================
         // TAB 3: 模範解答
         // ============================
@@ -509,7 +537,27 @@ function showDbAuthError() {
             const grid = document.getElementById('model-answer-grid'); grid.innerHTML = '';
             modelAnswers.forEach((ans, i) => {
                 const item = document.createElement('div'); item.className = 'model-cell';
+                item.style.cursor = 'pointer';
                 item.innerHTML = `<div class="q-label"><i class="fa-solid fa-hashtag"></i>${i + 1}</div><div class="q-answer" style="${ans ? '' : 'color:var(--text-muted);font-style:italic'}">${ans || '—'}</div>`;
+                item.addEventListener('click', () => {
+                    // 既に編集中なら無視
+                    if (item.querySelector('input')) return;
+                    const ansDiv = item.querySelector('.q-answer');
+                    const current = modelAnswers[i] || '';
+                    ansDiv.innerHTML = `<input type="text" value="${current}" style="width:100%;padding:4px 6px;font-size:16px;font-weight:800;text-align:center;border:2px solid var(--primary);border-radius:6px;background:rgba(0,0,0,0.3);color:white;outline:none;" />`;
+                    const input = ansDiv.querySelector('input');
+                    input.focus();
+                    input.select();
+                    const save = async () => {
+                        const newVal = input.value.trim();
+                        modelAnswers[i] = newVal;
+                        ansDiv.style = newVal ? '' : 'color:var(--text-muted);font-style:italic';
+                        ansDiv.textContent = newVal || '—';
+                        await saveModelAnswers();
+                    };
+                    input.addEventListener('blur', save);
+                    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } if (e.key === 'Escape') { ansDiv.textContent = current || '—'; } });
+                });
                 grid.appendChild(item);
             });
         }
@@ -638,7 +686,7 @@ function showDbAuthError() {
 
         async function getAnalyticsData() {
             const threshold = parseInt(document.getElementById('analytics-threshold').value) || 5;
-            let masterData = {}; try { masterData = JSON.parse(localStorage.getItem('masterData') || '{}'); } catch (e) { }
+            let masterData = {}; try { masterData = JSON.parse(localStorage.getItem(`masterData_${projectId}`) || '{}'); } catch (e) { }
             const tp = entryNumbers.length || 1, qStats = [];
             for (let q = 1; q <= totalQuestions; q++) {
                 let cc = 0, ce = []; entryNumbers.forEach(en => { const fd = scoresData[`__final__q${q}`] || {}; const qs = scoresData[en]?.[`q${q}`] || {}; let r; if (fd[en]) r = fd[en] === 'correct' ? 1 : 0; else { r = Object.values(qs).filter(v => v === 'correct').length >= 2 ? 1 : 0; } if (r === 1) { cc++; ce.push(en); } });

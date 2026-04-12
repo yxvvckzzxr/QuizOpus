@@ -97,7 +97,7 @@ const projectId = session.projectId;
                         }
                         masterData[v.entryNumber] = { name };
                     }
-                    localStorage.setItem('masterData', JSON.stringify(masterData));
+                    localStorage.setItem(`masterData_${projectId}`, JSON.stringify(masterData));
                 }
             });
         }
@@ -142,7 +142,7 @@ const projectId = session.projectId;
                     statusEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> 完了';
                 } else if (scorerList.length > 0) {
                     statusEl.className = 'q-status status-inprogress';
-                    statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin-pulse"></i> 採点中 ${scorerList.length}/3`;
+                    statusEl.innerHTML = `<i class="fa-solid fa-pen"></i> 採点中 ${scorerList.length}/3`;
                 } else {
                     statusEl.className = 'q-status status-open';
                     statusEl.innerHTML = '<i class="fa-regular fa-circle"></i> 未着手';

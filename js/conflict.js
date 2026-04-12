@@ -94,7 +94,7 @@ const projectId = session.projectId;
             grid.innerHTML = '';
 
             let masterData = {};
-            try { masterData = JSON.parse(localStorage.getItem('masterData') || '{}'); } catch(e) {}
+            try { masterData = JSON.parse(localStorage.getItem(`masterData_${projectId}`) || '{}'); } catch(e) {}
 
             conflicts.forEach(({ q, entryNum, qScores, finalResult }, idx) => {
                 const imageData = answersData[entryNum]?.cells[`q${q}`];
@@ -206,7 +206,7 @@ const projectId = session.projectId;
         async function showPreview(entryNum) {
             let overlay = document.getElementById('preview-overlay');
             if (!overlay) { overlay = document.createElement('div'); overlay.id = 'preview-overlay'; overlay.className = 'preview-overlay'; document.body.appendChild(overlay); }
-            let masterData = {}; try { masterData = JSON.parse(localStorage.getItem('masterData')||'{}'); } catch(e) {}
+            let masterData = {}; try { masterData = JSON.parse(localStorage.getItem(`masterData_${projectId}`)||'{}'); } catch(e) {}
             const name = masterData[entryNum]?.name || `受付番号 ${entryNum}`;
             overlay.innerHTML = `<div class="preview-header"><h2>${name} の解答用紙</h2><button class="preview-close" onclick="document.getElementById('preview-overlay').classList.remove('show')">✕ 閉じる</button></div><div id="preview-content" style="text-align:center"><div style="color:#aaa">読み込み中...</div></div>`;
             overlay.classList.add('show');

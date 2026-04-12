@@ -87,7 +87,7 @@ const projectId = session.projectId;
             document.getElementById('progress-text').textContent = `${done} / ${total} 件`;
 
             let masterData = {};
-            try { masterData = JSON.parse(localStorage.getItem('masterData') || '{}'); } catch(e) {}
+            try { masterData = JSON.parse(localStorage.getItem(`masterData_${projectId}`) || '{}'); } catch(e) {}
 
             // DOMを毎度作り直すと画像がチラつくため、既に要素があればクラスのみ更新
             if (grid.children.length === entryNumbers.length && grid.children[0].className.includes('answer-card')) {
@@ -269,7 +269,7 @@ document.addEventListener('keydown', (e) => {
                 overlay.id = 'preview-overlay'; overlay.className = 'preview-overlay';
                 document.body.appendChild(overlay);
             }
-            let masterData = {}; try { masterData = JSON.parse(localStorage.getItem('masterData')||'{}'); } catch(e) {}
+            let masterData = {}; try { masterData = JSON.parse(localStorage.getItem(`masterData_${projectId}`)||'{}'); } catch(e) {}
             const name = masterData[entryNum]?.name || `受付番号 ${entryNum}`;
             overlay.innerHTML = `<div class="preview-header"><h2>${name} の解答用紙</h2><button class="preview-close" onclick="document.getElementById('preview-overlay').classList.remove('show')">✕ 閉じる</button></div><div id="preview-content" style="text-align:center"><div style="color:#aaa">読み込み中...</div></div>`;
             overlay.classList.add('show');
