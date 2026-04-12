@@ -262,29 +262,7 @@
                     </div>
                 </div>
 
-                <!-- カレンダーポップアップ -->
-                <div id="dt-picker-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9998" onclick="closeDatePicker()"></div>
-                <div id="dt-picker" class="dt-picker" style="display:none">
-                    <div class="dt-picker-nav">
-                        <button type="button" onclick="dtNavMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
-                        <span id="dt-picker-month"></span>
-                        <button type="button" onclick="dtNavMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
-                    </div>
-                    <div class="dt-picker-weekdays">
-                        <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
-                    </div>
-                    <div class="dt-picker-days" id="dt-picker-days"></div>
-                    <div class="dt-picker-time">
-                        <i class="fa-regular fa-clock" style="color:var(--text-muted)"></i>
-                        <select id="dt-picker-hour"></select>
-                        <span style="font-weight:700">:</span>
-                        <select id="dt-picker-min"></select>
-                    </div>
-                    <div class="dt-picker-actions">
-                        <button type="button" class="dt-clear" onclick="dtClear()"><i class="fa-solid fa-xmark"></i> クリア</button>
-                        <button type="button" class="dt-ok" onclick="dtConfirm()"><i class="fa-solid fa-check"></i> 決定</button>
-                    </div>
-                </div>
+
             </div>
             <div class="section glass-panel">
                 <h2><i class="fa-solid fa-link"></i> 公開リンク</h2>
@@ -492,6 +470,29 @@
         <div id="save-overlay-text" style="color:var(--text-muted);margin-top:16px;font-size:16px;font-weight:600">0 / 0 件</div>
     </div>
 
+    <!-- カレンダーポップアップ -->
+    <div id="dt-picker-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9998" onclick="closeDatePicker()"></div>
+    <div id="dt-picker" class="dt-picker" style="display:none">
+        <div class="dt-picker-nav">
+            <button type="button" onclick="dtNavMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+            <span id="dt-picker-month"></span>
+            <button type="button" onclick="dtNavMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+        <div class="dt-picker-weekdays">
+            <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+        </div>
+        <div class="dt-picker-days" id="dt-picker-days"></div>
+        <div class="dt-picker-time">
+            <i class="fa-regular fa-clock" style="color:var(--text-muted)"></i>
+            <select id="dt-picker-hour"></select>
+            <span style="font-weight:700">:</span>
+            <select id="dt-picker-min"></select>
+        </div>
+        <div class="dt-picker-actions">
+            <button type="button" class="dt-clear" onclick="dtClear()"><i class="fa-solid fa-xmark"></i> クリア</button>
+            <button type="button" class="dt-ok" onclick="dtConfirm()"><i class="fa-solid fa-check"></i> 決定</button>
+        </div>
+    </div>
     <canvas id="work-canvas" style="display:none"></canvas>
     <canvas id="transform-canvas" style="display:none"></canvas>
 
