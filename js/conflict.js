@@ -205,15 +205,20 @@ const projectId = session.projectId;
         init();
         async function showPreview(entryNum) {
             let overlay = document.getElementById('preview-overlay');
-            if (!overlay) { overlay = document.createElement('div'); overlay.id = 'preview-overlay'; overlay.className = 'preview-overlay'; document.body.appendChild(overlay); }
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'preview-overlay';
+                overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(10px);z-index:10000;display:none;overflow-y:auto;padding:24px;';
+                document.body.appendChild(overlay);
+            }
             let masterData = {}; try { masterData = JSON.parse(localStorage.getItem(`masterData_${projectId}`)||'{}'); } catch(e) {}
             const name = masterData[entryNum]?.name || `受付番号 ${entryNum}`;
-            overlay.innerHTML = `<div class="preview-header"><h2>${name} の解答用紙</h2><button class="preview-close" onclick="document.getElementById('preview-overlay').classList.remove('show')">✕ 閉じる</button></div><div id="preview-content" style="text-align:center"><div style="color:#aaa">読み込み中...</div></div>`;
-            overlay.classList.add('show');
+            overlay.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;"><h2 style="color:white;font-size:18px"><i class="fa-solid fa-file-image"></i> ${name} の解答用紙</h2><button class="btn secondary" onclick="document.getElementById('preview-overlay').style.display='none'">✕ 閉じる</button></div><div id="preview-content" style="text-align:center"><div style="color:#aaa"><i class="fa-solid fa-spinner fa-spin"></i> 読み込み中...</div></div>`;
+            overlay.style.display = 'block';
             const snap = await db.ref(`projects/${projectId}/protected/${secretHash}/answers/${entryNum}/pageImage`).get();
             const pc = document.getElementById('preview-content');
             if (snap.exists()) {
-                pc.innerHTML = `<img src="${snap.val()}" alt="${name}" style="max-width:100%;border-radius:8px;background:white;">`;
-            } else { pc.innerHTML = '<div style="color:#aaa">ページ画像が保存されていません。管理画面から答案を再読み込みしてください。</div>'; }
+                pc.innerHTML = `<img src="${snap.val()}" alt="${name}" style="max-width:100%;max-height:85vh;border-radius:8px;background:white;box-shadow:0 4px 24px rgba(0,0,0,0.5)">`;
+            } else { pc.innerHTML = '<div style="color:#aaa;padding:40px">ページ画像が保存されていません。管理画面から答案を再読み込みしてください。</div>'; }
         }
-        document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('preview-overlay')?.classList.remove('show'); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') { const o = document.getElementById('preview-overlay'); if (o) o.style.display = 'none'; }});

@@ -139,18 +139,20 @@ function showDbAuthError() {
                 updateStatsView();
             });
 
-            // 模範解答読み込み
-            const modelSnap = await db.ref(`projects/${projectId}/protected/${secretHash}/answers_text`).get();
+            // 模範解答・参加者・答案を並列読み込み
+            const modelPromise = db.ref(`projects/${projectId}/protected/${secretHash}/answers_text`).get();
+
+            // 参加者と答案リストは非同期で並列実行（await不要）
+            loadAdminEntries();
+            loadEntryList();
+
+            const modelSnap = await modelPromise;
             modelAnswers = new Array(totalQuestions).fill('');
             if (modelSnap.exists()) {
                 const d = modelSnap.val();
                 Object.keys(d).forEach(q => { modelAnswers[q - 1] = d[q]; });
             }
             renderModelGrid();
-            
-            // 自動読み込み処理
-            loadAdminEntries();
-            loadEntryList();
         }
 
         // ============================

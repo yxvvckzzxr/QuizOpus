@@ -15,7 +15,10 @@
         .answer-badge { font-size: 24px; font-weight: bold; letter-spacing: 2px; }
         .progress-text { color: var(--text-muted); font-size: 13px; font-weight: 600; }
 
-        .answer-grid { margin-top: 80px; padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding-bottom: 60px; }
+        .answer-grid { margin-top: 80px; padding: 20px; display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); padding-bottom: 60px; }
+        @media (min-width: 600px) { .answer-grid { grid-template-columns: repeat(5, 1fr); } }
+        @media (min-width: 1024px) { .answer-grid { grid-template-columns: repeat(8, 1fr); } }
+        @media (min-width: 1280px) { .answer-grid { grid-template-columns: repeat(10, 1fr); } }
         .answer-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(8px); border: 2px solid transparent; border-radius: 12px; padding: 12px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); text-align: center; display: flex; flex-direction: column; justify-content: space-between; height: 100%; box-shadow: var(--shadow-sm); }
         .answer-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); background: rgba(30, 41, 59, 0.8); }
         .answer-card.correct { border-color: rgba(16, 185, 129, 0.6); background: rgba(16, 185, 129, 0.1); }
@@ -58,7 +61,6 @@
         <button class="btn secondary" onclick="location.href='judge.html'" style="flex-shrink:0">← 一覧へ</button>
         <div style="display:flex;align-items:center;gap:12px;flex:1;justify-content:center">
             <div class="q-badge" id="q-badge">- 問</div>
-            <div style="font-size:13px;color:var(--text-muted)">模範：</div>
             <div class="answer-badge" id="answer-badge">...</div>
         </div>
         <div class="progress-text" id="progress-text" style="flex-shrink:0"></div>
