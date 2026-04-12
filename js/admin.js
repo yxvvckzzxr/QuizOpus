@@ -14,7 +14,7 @@ function showDbAuthError() {
         <div class="error-dialog">
             <h2><i class="fa-solid fa-triangle-exclamation"></i> データベース通信拒否</h2>
             <p>データベースへの接続が拒否されました。<br><br><br>運営者にお問い合わせください。</p>
-            <button class="btn danger" onclick="location.href='index.html'">ログイン画面へ戻る</button>
+            <button class="btn danger" onclick="location.href='index.html'"><i class="fa-solid fa-arrow-left"></i> ログイン画面へ戻る</button>
         </div>
     `;
     document.body.appendChild(div);

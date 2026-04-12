@@ -1,6 +1,9 @@
 const projectId = session.projectId;
-        const secretHash = session.get("secretHash");
-        if (!projectId) { document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#f87171;font-weight:bold;">プロジェクトに入室してください。3秒後にトップページへ戻ります。</div>'; setTimeout(() => location.href = 'index.html', 3000); return; }
+const secretHash = session.get("secretHash");
+if (!projectId) {
+    document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#f87171;font-weight:bold;">プロジェクトに入室してください。3秒後にトップページへ戻ります。</div>';
+    setTimeout(() => location.href = 'index.html', 3000);
+} else {
 
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
@@ -121,3 +124,4 @@ const projectId = session.projectId;
                 lastUUID = '';
             }, 3000);
         }
+}
