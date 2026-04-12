@@ -104,36 +104,34 @@ async function joinProject() {
 		// 新バージョンのログイン判定 (入力されたパスワードのハッシュで探る)
 		const hash = await AppCrypto.hashPassword(pwd);
 
-		// Admin判定
-		const snapAdmin = await db.ref(`projects/${pid}/protected/${hash}/settings`).once('value');
-		if (snapAdmin.exists()) {
-			const adminConfig = snapAdmin.val();
-			session.set('projectId', pid);
-			session.set('scorer_name', name);
-			session.set('scorer_role', 'admin');
-			session.set('secretHash', adminConfig.scorerHash); // 採点者領域へのアクセス権
-			session.set('adminHash', hash); // 管理者領域へのアクセス権
-
-			// PII復号用に暗号化された秘密鍵を一時的に解読してセッションへ
-			try {
-				const privJwkStr = await AppCrypto.decryptAES(adminConfig.encryptedPrivateKey, pwd);
-				session.set('privateKeyJwk', privJwkStr);
-			} catch (e) {
-				console.error("Failed to decrypt private key");
+		const snapCheck = await db.ref(`projects/${pid}/protected/${hash}/settings`).once('value');
+		if (snapCheck.exists()) {
+			const configData = snapCheck.val();
+			if (configData.role === 'scorer') {
+				// Scorer login
+				session.set('projectId', pid);
+				session.set('scorer_name', name);
+				session.set('scorer_role', 'scorer');
+				session.set('secretHash', hash);
+				location.href = 'judge.html';
+				return;
+			} else {
+				// Admin login
+				session.set('projectId', pid);
+				session.set('scorer_name', name);
+				session.set('scorer_role', 'admin');
+				session.set('secretHash', configData.scorerHash);
+				session.set('adminHash', hash);
+				
+				try {
+					const privJwkStr = await AppCrypto.decryptAES(configData.encryptedPrivateKey, pwd);
+					session.set('privateKeyJwk', privJwkStr);
+				} catch (e) {
+					console.error("Failed to decrypt private key");
+				}
+				location.href = 'admin.html';
+				return;
 			}
-			location.href = 'admin.html';
-			return;
-		}
-
-		// Scorer判定
-		const snapScorer = await db.ref(`projects/${pid}/protected/${hash}/settings`).once('value');
-		if (snapScorer.exists()) {
-			session.set('projectId', pid);
-			session.set('scorer_name', name);
-			session.set('scorer_role', 'scorer');
-			session.set('secretHash', hash); // 採点者領域へのアクセス権のみ
-			location.href = 'judge.html';
-			return;
 		}
 
 		throw new Error('アクセスコード または パスワードが間違っています');
