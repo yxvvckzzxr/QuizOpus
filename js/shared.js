@@ -107,7 +107,7 @@ async function dbQuery(path, orderBy, equalTo) {
  * @param {number} maxRetries
  * @returns {Promise<{committed: boolean, value: any}>}
  */
-async function dbTransaction(path, updateFn, maxRetries = 15) {
+async function dbTransaction(path, updateFn, maxRetries = 25) {
     const url = `${FIREBASE_REST_BASE}/${path}.json`;
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         const res = await fetch(url, { headers: { 'X-Firebase-ETag': 'true' } });
@@ -126,13 +126,15 @@ async function dbTransaction(path, updateFn, maxRetries = 15) {
             return { committed: true, value: newVal };
         }
         if (putRes.status === 412) {
-            // 別の人が先に書き込んだ → ランダム待機してリトライ
-            await new Promise(r => setTimeout(r, 50 + Math.random() * 150));
+            // 指数バックオフ + ジッター（200人同時エントリーでも衝突を分散）
+            const baseDelay = Math.min(50 * Math.pow(2, attempt), 2000);
+            const jitter = Math.random() * baseDelay;
+            await new Promise(r => setTimeout(r, baseDelay + jitter));
             continue;
         }
         throw new Error(`dbTransaction PUT failed: ${putRes.status}`);
     }
-    throw new Error('dbTransaction: リトライ回数超過');
+    throw new Error('dbTransaction: リトライ回数超過。時間を置いて再度お試しください。');
 }
 
 // ============================================
@@ -226,8 +228,11 @@ const IdleManager = {
     _pollers: [],
     _idleTimer: null,
     _visTimer: null,
+    _slowTimer: null,
     _paused: false,
-    IDLE_MS: 10 * 60 * 1000, // 10分無操作で通信停止
+    _slow: false,
+    IDLE_MS: 10 * 60 * 1000,    // 10分無操作で通信停止
+    SLOW_MS: 30 * 1000,          // 30秒無操作でポーリング間隔を倍に
 
     register(poller) { this._pollers.push(poller); },
 
@@ -248,6 +253,7 @@ const IdleManager = {
         ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
             document.addEventListener(evt, () => {
                 if (this._paused) this.resume();
+                if (this._slow) this._restoreSpeed();
                 this.resetIdle();
             }, { passive: true });
         });
@@ -256,20 +262,43 @@ const IdleManager = {
 
     resetIdle() {
         if (this._idleTimer) clearTimeout(this._idleTimer);
+        if (this._slowTimer) clearTimeout(this._slowTimer);
         this._idleTimer = setTimeout(() => this.pause(), this.IDLE_MS);
+        // 30秒操作なし → ポーリング間隔を倍にして帯域節約
+        this._slowTimer = setTimeout(() => this._enterSlow(), this.SLOW_MS);
+    },
+
+    _enterSlow() {
+        if (this._slow || this._paused) return;
+        this._slow = true;
+        this._pollers.forEach(p => {
+            p._origInterval = p._origInterval || p.intervalMs;
+            p.intervalMs = p._origInterval * 2;
+        });
+    },
+
+    _restoreSpeed() {
+        this._slow = false;
+        this._pollers.forEach(p => {
+            if (p._origInterval) { p.intervalMs = p._origInterval; }
+        });
     },
 
     pause() {
         if (this._paused) return;
         this._paused = true;
         this._pollers.forEach(p => p.stop());
-        showToast('無操作のため通信を一時停止しました。画面を操作すると再開します。', 'info', 15000);
+        if (typeof showToast === 'function') showToast('無操作のため通信を一時停止しました。画面を操作すると再開します。', 'info', 15000);
     },
 
     resume() {
         if (!this._paused) return;
         this._paused = false;
-        this._pollers.forEach(p => p.start());
+        this._slow = false;
+        this._pollers.forEach(p => {
+            if (p._origInterval) { p.intervalMs = p._origInterval; }
+            p.start();
+        });
     }
 };
 

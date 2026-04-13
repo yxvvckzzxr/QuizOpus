@@ -29,11 +29,10 @@ const params = new URLSearchParams(location.search);
 
     async function processCancel() {
         const numStr = document.getElementById('f-number').value.trim();
-        const email = document.getElementById('f-email').value.trim();
         const pw = document.getElementById('f-password').value.trim();
 
-        if (!numStr || !email || !pw) {
-            showStatus('すべての項目を入力してください。', 'error');
+        if (!numStr || !pw) {
+            showStatus('受付番号とパスワードを入力してください。', 'error');
             return;
         }
 

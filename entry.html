@@ -3,7 +3,14 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://quziopus-default-rtdb.asia-southeast1.firebasedatabase.app https://firebasestorage.googleapis.com https://script.google.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="description" content="QuizOpus - クイズ大会の解答採点を支援するウェブプラットフォーム。リアルタイム採点・成績開示・参加者管理をワンストップで。">
+    <meta property="og:title" content="QuizOpus - 解答採点プラットフォーム">
+    <meta property="og:description" content="クイズ大会の解答採点を支援するウェブプラットフォーム">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="favicon.png">
     <title>QuizOpus - エントリー</title>
     <script src="js/config.js"></script>
     <script src="js/crypto.js"></script>
@@ -146,9 +153,9 @@
                     <label class="custom-checkbox">
                         <input type="checkbox" id="f-tos" required>
                         <span class="checkbox-mark"><i class="fa-solid fa-check"></i></span>
-                        <span>私は大会の参加規約に同意し、入力した情報が正確であることを確認しました。<br>
+                        <span>私は大会の参加規約および<a href="legal.html" target="_blank" style="color:#60a5fa;text-decoration:underline">プライバシーポリシー・利用規約</a>に同意し、入力した情報が正確であることを確認しました。<br>
                             <span style="color:#f87171;font-size:12px"><i class="fa-solid fa-circle-exclamation"></i>
-                                受付コードはメールで送信されますので、受信可能なアドレスであることを必ず確認してください。</span></span>
+                                受付コードはメールで送信されます。メール受信に同意の上、受信可能なアドレスであることを必ず確認してください。</span></span>
                     </label>
                 </div>
 

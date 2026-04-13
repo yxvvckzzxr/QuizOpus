@@ -1264,4 +1264,46 @@
             }
         }
 
+        async function deleteProject() {
+            if (!(await showConfirm(
+                'このプロジェクトの全データをサーバーから完全に削除しますか？\n\n' +
+                '⚠️ この操作は取り消せません。\n' +
+                '事前に「全データをエクスポート」でバックアップを取ることを強く推奨します。',
+                '完全に削除する'
+            ))) return;
+
+            // 2段階確認
+            if (!(await showConfirm(
+                `プロジェクト「${projectId}」を本当に削除しますか？\nすべてのエントリー・答案・スコアが失われます。`,
+                '削除を確定'
+            ))) return;
+
+            try {
+                showAdminToast('プロジェクトを削除しています...', 'info', 10000);
+
+                // Storage の画像データを削除
+                if (storage) {
+                    try {
+                        const storageRef = storage.ref(`projects/${projectId}`);
+                        const list = await storageRef.listAll();
+                        for (const folder of list.prefixes) {
+                            const files = await folder.listAll();
+                            for (const file of files.items) {
+                                await file.delete().catch(() => {});
+                            }
+                        }
+                    } catch (e) { console.warn('Storage cleanup partial:', e); }
+                }
+
+                // RTDB のプロジェクトデータを削除
+                await dbRemove(`projects/${projectId}`);
+
+                showAdminToast('プロジェクトを削除しました。トップページに戻ります。', 'success', 3000);
+                session.clear();
+                setTimeout(() => { location.href = 'index.html'; }, 2000);
+            } catch (e) {
+                showAdminToast('削除エラー: ' + e.message, 'error');
+            }
+        }
+
         init();
