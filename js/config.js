@@ -22,7 +22,12 @@ const SYSTEM_GAS_URL = "https://script.google.com/macros/s/AKfycbzCWmgdMJ_a2-oMs
 const session = {
   get(key) { return localStorage.getItem(key); },
   set(key, val) { localStorage.setItem(key, val); },
-  clear() { localStorage.removeItem('projectId'); localStorage.removeItem('scorer_name'); localStorage.removeItem('scorer_role'); },
+  clear() {
+    const projectId = localStorage.getItem('projectId');
+    ['projectId', 'scorer_name', 'scorer_role', 'secretHash', 'adminHash', 'privateKeyJwk'].forEach(k => localStorage.removeItem(k));
+    // masterData キャッシュも削除
+    if (projectId) localStorage.removeItem(`masterData_${projectId}`);
+  },
   get projectId() { return this.get('projectId'); },
   get scorerName() { return this.get('scorer_name'); },
   get scorerRole() { return this.get('scorer_role'); }

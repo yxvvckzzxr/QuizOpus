@@ -379,7 +379,7 @@
                     let pageImageUrl = null;
                     const cellUrls = {};
 
-                    // Firebase Storage にアップロード（利用可能な場合）
+                    // Firebase Storage にアップロード
                     if (storage) {
                         try {
                             // ページ全体画像
@@ -395,27 +395,21 @@
                             }
                         } catch (e) {
                             console.error('Storage upload error:', e);
-                            // フォールバック: Base64をDBに直接保存
-                            pageImageUrl = null;
+                            showAdminToast(`受付番号 ${a.entryNumber}: 画像アップロード失敗 — Firebase Storage を有効にしてください`, 'error');
+                            continue; // RTDB への巨大 Base64 書き込みを防止
                         }
+                    } else {
+                        showAdminToast('Firebase Storage が未設定です。管理者に連絡してください。', 'error');
+                        overlay.style.display = 'none';
+                        return;
                     }
-
-                    // RTDB にメタデータ（とフォールバック時は画像データ）を保存
                     const data = {
                         entryNumber: a.entryNumber,
                         page: a.page,
-                        uploadedAt: SERVER_TIMESTAMP
+                        uploadedAt: SERVER_TIMESTAMP,
+                        pageImageUrl: pageImageUrl,
+                        cellUrls: cellUrls
                     };
-
-                    if (pageImageUrl) {
-                        // Storage URL を保存（軽量！）
-                        data.pageImageUrl = pageImageUrl;
-                        data.cellUrls = cellUrls;
-                    } else {
-                        // フォールバック: 旧方式（Base64直接保存）
-                        data.pageImage = a.pageImage;
-                        data.cells = a.cells.reduce((o, c) => { o[`q${c.q}`] = c.imageData; return o; }, {});
-                    }
 
                     await dbSet(`projects/${projectId}/protected/${secretHash}/answers/${a.entryNumber}`, data);
                     current++;

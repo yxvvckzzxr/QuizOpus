@@ -232,7 +232,7 @@
       <div class="warning-box">
         <strong><i class="fa-solid fa-shield-halved"></i> データの取り扱いに関する注意</strong><br>
         ・サーバー容量制限のため、半年間アクセスのないプロジェクトは自動削除されます。<br>
-        ・アップロードされた答案画像の元データは3日経過で削除されます。<br>
+        ・アップロードされた答案画像の元データは<strong>24時間</strong>経過で削除されます。<br>
         ・大会終了後は必ず管理画面から「全データをエクスポート」の実行をお願いします。
       </div>
       <button class="btn" id="create-btn" onclick="createProject()">新しいプロジェクトを作成 <i class="fa-solid fa-plus"></i></button>
@@ -295,6 +295,11 @@
       
       <div class="restore-link" onclick="setTab('join')"><i class="fa-solid fa-arrow-left"></i> 戻る</div>
     </div>
+  </div>
+  <div style="margin-top: 24px; text-align: center;">
+    <a href="legal.html" style="color: #64748b; font-size: 12px; text-decoration: none;">
+      <i class="fa-solid fa-shield-halved"></i> プライバシーポリシー・利用規約
+    </a>
   </div>
   <script src="js/index.js"></script>
 </body>

@@ -152,15 +152,49 @@ class Poller {
         this.intervalMs = intervalMs;
         this._timerId = null;
         this._active = false;
+        this._failCount = 0;
+        this._lastETag = null;      // 帯域最適化: 変更なしなら 304 で応答を節約
+        this._notifiedError = false;
     }
 
     async _tick() {
         if (!this._active) return;
         try {
-            const data = await dbGet(this.path);
-            this.callback(data);
+            // ETag 条件付き GET で帯域節約（データ未変更時は 304 → コールバック不要）
+            const headers = {};
+            if (this._lastETag) headers['If-None-Match'] = this._lastETag;
+            headers['X-Firebase-ETag'] = 'true';
+
+            const res = await fetch(`${FIREBASE_REST_BASE}/${this.path}.json`, { headers });
+
+            if (res.status === 304) {
+                // データ変更なし → スキップ（帯域節約）
+            } else if (res.ok) {
+                this._lastETag = res.headers.get('ETag');
+                const data = await res.json();
+                this.callback(data);
+            } else if (res.status === 401 || res.status === 403) {
+                showDbAuthError();
+                this._active = false;
+                return;
+            } else {
+                throw new Error(`HTTP ${res.status}`);
+            }
+            // 成功 → 連続失敗カウンタをリセット
+            if (this._failCount > 0) {
+                this._failCount = 0;
+                if (this._notifiedError) {
+                    this._notifiedError = false;
+                    if (typeof showToast === 'function') showToast('通信が回復しました', 'success');
+                }
+            }
         } catch (e) {
-            console.error(`Poller(${this.path}):`, e);
+            this._failCount++;
+            console.error(`Poller(${this.path}) fail #${this._failCount}:`, e);
+            if (this._failCount >= 3 && !this._notifiedError) {
+                this._notifiedError = true;
+                if (typeof showToast === 'function') showToast('サーバーとの通信に問題が発生しています', 'error', 8000);
+            }
         }
         if (this._active) {
             this._timerId = setTimeout(() => this._tick(), this.intervalMs);
@@ -180,7 +214,7 @@ class Poller {
         return this;
     }
 
-    restart() { this.stop(); this.start(); return this; }
+    restart() { this.stop(); this._lastETag = null; this.start(); return this; }
 }
 
 // ============================================

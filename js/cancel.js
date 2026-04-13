@@ -61,7 +61,8 @@ const params = new URLSearchParams(location.search);
             const pwHash = await AppCrypto.hashPassword(pw);
 
             for (const [key, data] of Object.entries(entriesData)) {
-                if (data.email === email && (data.disclosurePw === pwHash || data.disclosurePw === pw)) {
+                // パスワードハッシュで認証（E2E暗号化対応：メールは照合不可なのでPW＋受付番号で認証）
+                if (data.disclosurePw === pwHash || data.disclosurePw === pw) {
                     targetKey = key;
                     targetData = data;
                     matched = true;
