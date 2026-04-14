@@ -155,12 +155,10 @@ const params = new URLSearchParams(location.search);
                         document.getElementById('f-prefecture').setAttribute('required', 'required');
                     }
 
-                    // 参加規約とエントリーネーム設定
-                    if (settings.terms) {
-                        const tosArea = document.getElementById('tos-text');
-                        if (tosArea) {
-                            tosArea.innerHTML = `私は<a href="terms.html?pid=${projectId}" target="_blank" style="color:#60a5fa;text-decoration:underline">参加規約</a>および<a href="legal.html" target="_blank" style="color:#60a5fa;text-decoration:underline">プライバシーポリシー</a>に同意し、入力した情報が正確であることを確認しました。`;
-                        }
+                    // 参加規約リンクにプロジェクトIDを付与
+                    const termsLink = document.getElementById('terms-link');
+                    if (termsLink) {
+                        termsLink.href = `terms.html?pid=${projectId}`;
                     }
 
                     const prefArea = document.getElementById('entry-name-pref-area');
