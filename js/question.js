@@ -146,7 +146,7 @@ const currentQ = parseInt(localStorage.getItem('current_q') || '1');
                         const pctMT = -imageData.y / imageData.w * 100;
                         imgHtml = `<div style="width:100%;height:60px;overflow:hidden;background:white;border-radius:4px">
                             <img src="${imageData.url}" alt="${displayName}" loading="lazy"
-                                 style="display:block;width:${pctW}%;margin-left:${pctML}%;margin-top:${pctMT}%" />
+                                 style="display:block;width:${pctW}%;height:auto;object-fit:initial;max-width:none;margin-left:${pctML}%;margin-top:${pctMT}%" />
                         </div>`;
                     } else {
                         imgHtml = `<img src="${imageData || ''}" alt="${displayName}" loading="lazy" />`;
