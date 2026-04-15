@@ -10,6 +10,7 @@ const params = new URLSearchParams(location.search);
 
     async function init() {
         if (!projectId) return;
+        await waitForAuth();
 
         // プロジェクト名を取得して表示
         try {

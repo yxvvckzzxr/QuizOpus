@@ -14,7 +14,7 @@ const { projectId, secretHash } = auth;
         let totalQuestions = 100;
 
         async function init() {
-            // 独立した3つのクエリを並列実行 (REST)
+            await waitForAuth();
             const [config, shallowData, answersTextData] = await Promise.all([
                 dbGet(`projects/${projectId}/protected/${secretHash}/config`),
                 dbShallow(`projects/${projectId}/protected/${secretHash}/answers`).catch(e => { console.error('答案キー取得エラー:', e); return null; }),

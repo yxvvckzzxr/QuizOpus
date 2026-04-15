@@ -20,7 +20,8 @@ const currentQ = parseInt(localStorage.getItem('current_q') || '1');
         const answerDataCache = {};
 
         async function init() {
-            // 模範解答と全答案データを一括取得 (REST 2リクエストのみ)
+            await waitForAuth();
+            // 模範解答と全答案データを一括取得
             const [answerText, allAnswers] = await Promise.all([
                 dbGet(`projects/${projectId}/protected/${secretHash}/answers_text/${currentQ}`),
                 dbGet(`projects/${projectId}/protected/${secretHash}/answers`)
@@ -138,7 +139,6 @@ const currentQ = parseInt(localStorage.getItem('current_q') || '1');
                 });
             } else {
                 grid.innerHTML = '';
-                const imgLoadPromises = [];
 
                 entryNumbers.forEach((entryNum, idx) => {
                     const imageData = answers[entryNum]?.cells[`q${currentQ}`];
@@ -167,21 +167,17 @@ const currentQ = parseInt(localStorage.getItem('current_q') || '1');
                     card.addEventListener('dblclick', () => showPreview(projectId, secretHash, entryNum));
                     grid.appendChild(card);
 
+                    // 個別フェードイン: 画像が読み込まれた順に表示
                     const img = card.querySelector('img');
                     if (img && img.src) {
-                        imgLoadPromises.push(new Promise(r => {
-                            if (img.complete) r();
-                            else { img.onload = r; img.onerror = r; }
-                        }));
+                        const wrapper = card.querySelector('.crop-wrap') || img;
+                        if (img.complete) {
+                            wrapper.style.opacity = '1';
+                        } else {
+                            img.onload = () => { wrapper.style.opacity = '1'; };
+                            img.onerror = () => { wrapper.style.opacity = '1'; };
+                        }
                     }
-                });
-
-                // 全画像ロード完了で画像だけ一斉表示
-                Promise.race([
-                    Promise.all(imgLoadPromises),
-                    new Promise(r => setTimeout(r, 3000))
-                ]).then(() => {
-                    grid.querySelectorAll('.crop-wrap, .answer-card > img').forEach(el => el.style.opacity = '1');
                 });
             }
 

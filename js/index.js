@@ -66,6 +66,7 @@ function generateSecureId() {
 }
 
 async function joinProject() {
+	await waitForAuth();
 	const pid = document.getElementById('join-id').value.trim();
 	const pwd = document.getElementById('join-password').value;
 	const name = document.getElementById('join-name').value.trim();
@@ -142,6 +143,7 @@ async function joinProject() {
 }
 
 async function createProject() {
+	await waitForAuth();
 	const pName = document.getElementById('create-project-name').value.trim();
 	const adminPwd = generateStrongPassword();
 	const scorerPwd = generateStrongPassword();
@@ -211,6 +213,7 @@ async function createProject() {
 }
 
 async function importProject() {
+	await waitForAuth();
 	const file = document.getElementById('import-file').files[0];
 	const pName = document.getElementById('import-project-name').value.trim();
 	const adminPwd = generateStrongPassword();

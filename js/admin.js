@@ -66,6 +66,7 @@
         }
 
         async function init() {
+            await waitForAuth();
             // ハッシュによるタブ指定
             const hash = location.hash.replace('#', '');
             if (hash && document.getElementById(hash)) {

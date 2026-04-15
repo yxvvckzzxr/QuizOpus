@@ -10,9 +10,11 @@ const firebaseConfig = {
   databaseURL: "https://quziopus-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
 
-// Firebase SDK初期化 (SDKが読み込まれているページのみ実行。admin.htmlはStorage利用のため読み込む)
+// Firebase SDK初期化
 if (typeof firebase !== 'undefined') {
   firebase.initializeApp(firebaseConfig);
+  // Anonymous Auth: ユーザーには見えないが、セキュリティルールで auth != null を満たす
+  firebase.auth().signInAnonymously().catch(e => console.warn('Anonymous auth failed:', e));
 }
 
 // システム共通のGAS連携URL（メール送信API）

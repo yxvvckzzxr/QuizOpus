@@ -19,6 +19,20 @@ const dbRef = (path) => db.ref(path);
 // firebase.database.ServerValue.TIMESTAMP
 const SERVER_TIMESTAMP = firebase.database.ServerValue.TIMESTAMP;
 
+/**
+ * Auth 認証完了を待つ。
+ * セキュリティルール (auth != null) を通すため、
+ * 各ページの初期化時に最初に呼ぶ。
+ */
+function waitForAuth() {
+    return new Promise(resolve => {
+        if (firebase.auth().currentUser) return resolve(firebase.auth().currentUser);
+        const unsub = firebase.auth().onAuthStateChanged(user => {
+            if (user) { unsub(); resolve(user); }
+        });
+    });
+}
+
 // ============================================
 //  Database ヘルパー (SDK版 — インターフェース互換)
 // ============================================

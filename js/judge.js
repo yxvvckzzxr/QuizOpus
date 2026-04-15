@@ -7,7 +7,8 @@ if (!auth) throw new Error('auth');
 let totalQuestions = 100;
 
         async function initializeApp() {
-            // プロジェクト設定を取得 (REST)
+            await waitForAuth();
+            // プロジェクト設定を取得
             const config = await dbGet(`projects/${projectId}/protected/${secretHash}/config`);
             if (config) {
                 totalQuestions = config.questionCount || 100;

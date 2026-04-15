@@ -137,6 +137,7 @@ const params = new URLSearchParams(location.search);
         // 初期化: プロジェクト設定読み込み
         async function init() {
             if (!projectId) return;
+            await waitForAuth();
 
             try {
                 // プロジェクト名を取得して表示 (REST)

@@ -11,6 +11,7 @@ const params = new URLSearchParams(location.search);
     // 大会名を取得して表示
     (async () => {
         if (!projectId) return;
+        await waitForAuth();
         try {
             const pName = await dbGet(`projects/${projectId}/publicSettings/projectName`);
             document.getElementById('cancel-title').textContent = pName || 'キャンセルフォーム';

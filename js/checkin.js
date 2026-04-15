@@ -18,6 +18,7 @@ if (!projectId) {
 
         // プロジェクト名読み込み (REST)
         (async function init() {
+            await waitForAuth();
             const s = await dbGet(`projects/${projectId}/settings`);
             if (s) {
                 document.getElementById('page-title').innerHTML = `<i class="fa-solid fa-qrcode"></i> ${s.projectName || ''} 受付`;
