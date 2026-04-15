@@ -125,10 +125,10 @@ let requiredScorers = 3;
                     statusEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> 完了';
                 } else if (scorerList.length > 0) {
                     statusEl.className = 'q-status status-inprogress';
-                    statusEl.innerHTML = `<i class="fa-solid fa-pen"></i> 採点中 ${scorerList.length}/3`;
+                    statusEl.innerHTML = `<i class="fa-solid fa-pen"></i> 採点中 ${scorerList.length}/${requiredScorers}`;
                 } else {
                     statusEl.className = 'q-status status-open';
-                    statusEl.innerHTML = '<i class="fa-regular fa-circle"></i> 未着手';
+                    statusEl.innerHTML = '<i class="fa-solid fa-minus"></i> 未着手';
                 }
             }
         }
