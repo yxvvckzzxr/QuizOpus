@@ -20,15 +20,27 @@ const currentQ = parseInt(localStorage.getItem('current_q') || '1');
         const answerDataCache = {};
 
         async function init() {
-            // 模範解答と答案キーを並列取得 (REST)
-            const [answerText, shallowData] = await Promise.all([
+            // 模範解答と全答案データを一括取得 (REST 2リクエストのみ)
+            const [answerText, allAnswers] = await Promise.all([
                 dbGet(`projects/${projectId}/protected/${secretHash}/answers_text/${currentQ}`),
-                dbShallow(`projects/${projectId}/protected/${secretHash}/answers`)
+                dbGet(`projects/${projectId}/protected/${secretHash}/answers`)
             ]);
             document.getElementById('answer-badge').textContent = answerText || '未設定';
 
-            if (shallowData) {
-                entryNumbers = Object.keys(shallowData).map(Number).sort((a, b) => a - b);
+            if (allAnswers) {
+                entryNumbers = Object.keys(allAnswers).map(Number).sort((a, b) => a - b);
+                // キャッシュに格納 & 画像プリロード開始
+                const preloadedUrls = new Set();
+                entryNumbers.forEach(num => {
+                    answerDataCache[num] = allAnswers[num];
+                    // 画像を即座にダウンロード開始
+                    const url = allAnswers[num]?.pageImageUrl;
+                    if (url && !preloadedUrls.has(url)) {
+                        preloadedUrls.add(url);
+                        const img = new Image();
+                        img.src = url;
+                    }
+                });
             }
 
             if (entryNumbers.length === 0) {
@@ -36,17 +48,10 @@ const currentQ = parseInt(localStorage.getItem('current_q') || '1');
                 return;
             }
 
-
-            // 現在の設問の画像のみを並列取得 (REST)
-            const fetchPromises = entryNumbers.map(async (entryNum) => {
-                // キャッシュがあれば再fetch不要
-                if (!answerDataCache[entryNum]) {
-                    answerDataCache[entryNum] = await dbGet(`projects/${projectId}/protected/${secretHash}/answers/${entryNum}`);
-                }
+            // キャッシュからCSSクロップデータを生成（HTTPリクエスト不要）
+            entryNumbers.forEach(entryNum => {
                 const cellData = answerDataCache[entryNum];
                 if (!answers[entryNum]) answers[entryNum] = { cells: {} };
-
-                // 新方式: CSSクロップ（CORS不要・canvas不要）
                 const region = cellData?.cellRegions?.[`q${currentQ}`];
                 if (region && cellData?.pageImageUrl && cellData?.pageWidth) {
                     answers[entryNum].cells[`q${currentQ}`] = {
@@ -56,12 +61,10 @@ const currentQ = parseInt(localStorage.getItem('current_q') || '1');
                         pageW: cellData.pageWidth
                     };
                 } else {
-                    // 旧方式フォールバック: cellUrls または Base64
                     const cellUrl = cellData?.cellUrls?.[`q${currentQ}`] || cellData?.cells?.[`q${currentQ}`];
                     answers[entryNum].cells[`q${currentQ}`] = cellUrl;
                 }
             });
-            await Promise.all(fetchPromises);
 
             // ETag トランザクションで採点者として登録（4人目防止）
             try {
