@@ -100,6 +100,10 @@
                     chars.forEach((c, i) => doc.text(c, x, startY + i * spacing, { align: 'center', baseline: 'middle' }));
                 }
                 const markerBottom = pageHeight - margin; // 292mm
+                // フルオープンモードチェック
+                const isFullOpen = await dbGet(`projects/${projectId}/publicSettings/fullOpen`);
+                const gradeLabel = isFullOpen ? "都道府県" : "学年";
+
                 const boxX = 15, boxY = gridMarginTop + maxGridHeight + 2, boxW = 180, boxH = markerBottom - boxY;
                 doc.rect(boxX, boxY, boxW, boxH, 'S');
                 const L1 = boxX + 6, L2 = boxX + 13, L3 = boxX + 57, L4 = L3 + 6, L5 = L4 + 18, L6 = L5 + 6, L7 = L6 + 40, L8 = L7 + 6;
@@ -108,7 +112,7 @@
                 doc.line(L1, boxY + rH, L3, boxY + rH, 'S'); doc.line(L1, boxY + rH * 2, L3, boxY + rH * 2, 'S');
                 doc.setFontSize(8);
                 drawVerticalText(doc, "受付番号", boxX + 3, boxY + boxH / 2);
-                drawVerticalText(doc, "学年", L3 + 3, boxY + boxH / 2);
+                drawVerticalText(doc, gradeLabel, L3 + 3, boxY + boxH / 2);
                 drawVerticalText(doc, "所属", L5 + 3, boxY + boxH / 2);
                 drawVerticalText(doc, "氏名", L7 + 3, boxY + boxH / 2);
                 const bubbleW = 3.2, bubbleH = 5.0;
@@ -120,7 +124,8 @@
                         doc.text(col.toString(), cx + bubbleW / 2, cy, { align: 'center', baseline: 'middle' });
                     }
                 }
-                doc.save(`answer_sheet_${qCount}q.pdf`);
+                const sheetType = isFullOpen ? 'fullopen_' : '';
+                doc.save(`answer_sheet_${sheetType}${qCount}q.pdf`);
                 showAdminToast("PDFのダウンロードが完了しました！", "success");
             } catch (err) {
                 showAdminToast("エラー: " + err.message);
