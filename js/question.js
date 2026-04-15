@@ -30,27 +30,33 @@ const currentQ = parseInt(localStorage.getItem('current_q') || '1');
 
             if (allAnswers) {
                 entryNumbers = Object.keys(allAnswers).map(Number).filter(n => n > 0).sort((a, b) => a - b);
-                // キャッシュに格納 & 画像を全てダウンロード完了まで待つ
-                const preloadedUrls = new Set();
+                // キャッシュに格納 & 画像をBlob URLに変換（ローカルメモリで即表示）
+                const blobUrlCache = {};
                 const preloadPromises = [];
                 entryNumbers.forEach(num => {
                     answerDataCache[num] = allAnswers[num];
                     const url = allAnswers[num]?.pageImageUrl;
-                    if (url && !preloadedUrls.has(url)) {
-                        preloadedUrls.add(url);
-                        preloadPromises.push(new Promise(resolve => {
-                            const img = new Image();
-                            img.onload = resolve;
-                            img.onerror = resolve;
-                            img.src = url;
-                        }));
+                    if (url && !blobUrlCache[url]) {
+                        blobUrlCache[url] = url; // フォールバック
+                        preloadPromises.push(
+                            fetch(url).then(r => r.blob()).then(blob => {
+                                blobUrlCache[url] = URL.createObjectURL(blob);
+                            }).catch(() => {})
+                        );
                     }
                 });
-                // 全画像ダウンロード完了を待つ（最大5秒）
+                // 全画像ダウンロード完了を待つ（最大8秒）
                 await Promise.race([
                     Promise.all(preloadPromises),
-                    new Promise(r => setTimeout(r, 5000))
+                    new Promise(r => setTimeout(r, 8000))
                 ]);
+                // 各エントリーのURLをBlob URLに差し替え
+                entryNumbers.forEach(num => {
+                    const origUrl = answerDataCache[num]?.pageImageUrl;
+                    if (origUrl && blobUrlCache[origUrl]) {
+                        answerDataCache[num].pageImageUrl = blobUrlCache[origUrl];
+                    }
+                });
             }
 
             if (entryNumbers.length === 0) {
