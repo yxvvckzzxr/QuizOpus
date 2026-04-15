@@ -33,7 +33,7 @@
             grid.className = 'entry-list-grid';
             entryListData.forEach(num => {
                 const md = masterData[num] || {};
-                const displayName = md.name || `No.${num}`;
+                const displayName = md.name || `No.${padNum(num)}`;
                 const subText = md.affiliation || '';
                 const card = document.createElement('div');
                 card.className = 'entry-card';
@@ -46,7 +46,7 @@
                         <div class="entry-name">${displayName}</div>
                         ${subText ? `<div class="entry-sub">${subText}</div>` : ''}
                     </div>
-                    <span class="entry-num-badge">#${num}</span>
+                    <span class="entry-num-badge">#${padNum(num)}</span>
                 `;
                 // チェック時のカードハイライト
                         const cb = card.querySelector('.entry-cb');
@@ -119,7 +119,7 @@
                 document.body.appendChild(overlay);
             }
             const masterData = getMasterData(projectId);
-            const name = masterData[num]?.name || `No.${num}`;
+            const name = masterData[num]?.name || `No.${padNum(num)}`;
             overlay.innerHTML = `<div class="preview-overlay-header"><h2 class="preview-overlay-title"><i class="fa-solid fa-file-image"></i> ${name} の解答用紙</h2><button class="btn secondary" onclick="document.getElementById('admin-preview-overlay').style.display='none'">✕ 閉じる</button></div><div id="admin-preview-content" class="preview-overlay-content"><div class="text-muted-loader"><i class="fa-solid fa-spinner fa-spin"></i> 読み込み中...</div></div>`;
             overlay.style.display = 'block';
             const ansData = await dbGet(`projects/${projectId}/protected/${secretHash}/answers/${num}`);

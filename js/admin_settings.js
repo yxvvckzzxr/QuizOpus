@@ -350,7 +350,7 @@
                         : v.checkedIn ? '<span class="badge success"><i class="fa-solid fa-check"></i> 受付済</span>' : '<span class="badge muted"><i class="fa-regular fa-clock"></i> 未受付</span>';
 
                     tr.innerHTML = `
-                    <td >${v.entryNumber || '-'}</td>
+                    <td >${padNum(v.entryNumber) || '-'}</td>
                     <td >${pii.familyName || '-'} ${pii.firstName || '-'}<br><span class="text-muted-sm">${pii.familyNameKana || ''} ${pii.firstNameKana || ''}</span></td>
                     <td >${pii.entryName || ''}</td>
                     <td >${pii.affiliation || ''}</td>

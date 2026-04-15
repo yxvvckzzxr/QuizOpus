@@ -238,7 +238,7 @@
                         }).catch(e => console.error(`DB write error for ${a.entryNumber}:`, e));
                     } catch (e) {
                         console.error(`Entry ${a.entryNumber} upload error:`, e);
-                        showAdminToast(`受付番号 ${a.entryNumber}: アップロード失敗`, 'error');
+                        showAdminToast(`受付番号 ${padNum(a.entryNumber)}: アップロード失敗`, 'error');
                     }
                     current++;
                     overlayBar.style.width = `${(current / totalBatch) * 100}%`;

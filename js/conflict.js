@@ -110,7 +110,7 @@ const { projectId, secretHash } = auth;
             conflicts.forEach(({ q, entryNum, qScores, finalResult }, idx) => {
                 const imageData = answersData[entryNum]?.cells[`q${q}`];
                 const modelAnswer = answersText[q] || '';
-                const displayName = masterData[entryNum]?.name || `受付番号 ${entryNum}`;
+                const displayName = masterData[entryNum]?.name || `No.${padNum(entryNum)}`;
 
                 const card = document.createElement('div');
                 card.className = `conflict-card ${finalResult ? 'resolved ' + finalResult : ''} ${idx === selectedIndex ? 'selected' : ''}`;

@@ -292,7 +292,7 @@ body.page-judge { padding: 24px; }
 /* ──────────────────────────────────────────
    conflict.html — Conflict Resolution
    ────────────────────────────────────────── */
-body.page-conflict { padding: 24px; }
+body.page-conflict { padding: 0; }
 .counter { padding: 6px 16px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; white-space: nowrap; }
 .counter.has-conflicts { background: rgba(245,158,11,0.2); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
 .counter.all-clear { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }

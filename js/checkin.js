@@ -92,12 +92,12 @@ if (!projectId) {
                     showResultUI('error', '<i class="fa-solid fa-xmark"></i> 該当者が見つかりません', '', '');
                 } else {
                     if (data.status === 'canceled') {
-                        showResultUI('canceled', '<i class="fa-solid fa-xmark"></i> キャンセル済み', `${data.familyName} ${data.firstName}`, `受付番号 ${data.entryNumber}`);
+                        showResultUI('canceled', '<i class="fa-solid fa-xmark"></i> キャンセル済み', `${data.familyName} ${data.firstName}`, `受付番号 ${padNum(data.entryNumber)}`);
                     } else if (data.checkedIn) {
-                        showResultUI('already', '<i class="fa-solid fa-triangle-exclamation"></i>️ 受付済み', `${data.familyName} ${data.firstName}`, `受付番号 ${data.entryNumber}`);
+                        showResultUI('already', '<i class="fa-solid fa-triangle-exclamation"></i>️ 受付済み', `${data.familyName} ${data.firstName}`, `受付番号 ${padNum(data.entryNumber)}`);
                     } else {
                         await dbSet(`projects/${projectId}/entries/${uuid}/checkedIn`, true);
-                        showResultUI('success', '<i class="fa-solid fa-check"></i> 受付完了', `${data.familyName} ${data.firstName}`, `受付番号 ${data.entryNumber}`);
+                        showResultUI('success', '<i class="fa-solid fa-check"></i> 受付完了', `${data.familyName} ${data.firstName}`, `受付番号 ${padNum(data.entryNumber)}`);
                         loadStats();
                     }
                 }

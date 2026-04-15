@@ -130,7 +130,7 @@ let requiredScorers = 3;
                 entryNumbers.forEach((entryNum, idx) => {
                     const imageData = answers[entryNum]?.cells[`q${currentQ}`];
                     const myScore = myScores[entryNum];
-                    const displayName = masterData[entryNum]?.name || `受付番号 ${entryNum}`;
+                    const displayName = masterData[entryNum]?.name || `No.${padNum(entryNum)}`;
 
                     const card = document.createElement('div');
                     card.className = `answer-card ${myScore === 'correct' ? 'correct' : myScore === 'wrong' ? 'wrong' : myScore === 'hold' ? 'hold' : ''} ${idx === selectedIndex ? 'selected' : ''}`;

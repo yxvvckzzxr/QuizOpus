@@ -58,7 +58,7 @@ const params = new URLSearchParams(location.search);
                     
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td class="c-time">${timeStr} <span style="color:#555;font-size:11px;margin-left:4px">#${e.entryNumber}</span></td>
+                        <td class="c-time">${timeStr} <span style="color:#555;font-size:11px;margin-left:4px">#${padNum(e.entryNumber)}</span></td>
                         <td><span class="c-affil">${e.affiliation}</span></td>
                         <td><span class="c-grade">${grade}</span></td>
                         <td class="c-name">${e.entryName}</td>
@@ -69,7 +69,7 @@ const params = new URLSearchParams(location.search);
             }
 
             if (count === 0) {
-                body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888;">まだエントリーはありません。</td></tr>';
+                body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">まだエントリーはありません。</td></tr>';
             }
             document.getElementById('total-count').textContent = count;
         } catch (e) {

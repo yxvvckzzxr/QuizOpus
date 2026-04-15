@@ -63,11 +63,11 @@
             const csvS = document.getElementById('csv-status'), csvB = document.getElementById('csv-btn');
             // CSV出力の可否は表示用の完了カウントではなく、真の全問確定（allConfirmed）で判定
             if (allConfirmed && totalQuestions > 0) { 
-                csvS.textContent = '全問確定済み。CSV出力できます。'; 
+                csvS.innerHTML = '<i class="fa-solid fa-circle-check"></i> 全問確定済み — CSV出力できます'; 
                 csvS.className = 'csv-status ready'; 
                 csvB.disabled = false; 
             } else { 
-                csvS.textContent = `未確定の問題があります（確定済み: ${confirmedCount}/${totalQuestions}）`; 
+                csvS.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> 未確定の問題があります（${confirmedCount} / ${totalQuestions} 確定済み）`; 
                 csvS.className = 'csv-status notready'; 
                 csvB.disabled = true; 
             }
@@ -153,9 +153,9 @@
                     if (useEntryName) {
                         // エントリーネームは entries の entryName フィールドから取得
                         const entryData = window._entriesRaw ? Object.values(window._entriesRaw).find(d => d.entryNumber === e) : null;
-                        return entryData?.entryName || `番号${e}`;
+                        return entryData?.entryName || `No.${padNum(e)}`;
                     }
-                    const m = masterData[e] || {}; return m.name ? `${m.affiliation || ''} ${m.name}`.trim() : `番号${e}`;
+                    const m = masterData[e] || {}; return m.name ? `${m.affiliation || ''} ${m.name}`.trim() : `No.${padNum(e)}`;
                 }).join(' / ') : '';
                 let type = ''; if (cc === 0) type = '全滅'; else if (cc === 1) type = '単独正解'; else if (cc <= threshold) type = '少数正解';
                 qStats.push({ q, correctCount: cc, rate, type, names, isRare: cc <= threshold && cc > 0 });
