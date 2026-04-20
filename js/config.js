@@ -16,8 +16,6 @@ if (typeof firebase !== 'undefined') {
   firebase.auth().signInAnonymously().catch(e => console.warn('Anonymous auth failed:', e));
 }
 
-// システム共通のGAS連携URL（メール送信API）
-const SYSTEM_GAS_URL = "https://script.google.com/macros/s/AKfycbzCWmgdMJ_a2-oMs08lGu30XBiKhNQrbBFT8mBP2HxuX_g_hnLfk3BQbfMfH-A17eVi/exec";
 
 // セッション管理ヘルパー（localStorageベースに統一）
 const session = {

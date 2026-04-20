@@ -19,9 +19,13 @@ if (!projectId) {
         // プロジェクト名読み込み
         (async function init() {
             await waitForAuth();
-            const s = await dbGet(`projects/${projectId}/settings`);
-            if (s) {
-                document.getElementById('page-title').innerHTML = `<i class="fa-solid fa-qrcode"></i> ${escapeHtml(s.projectName || '')} 受付`;
+            let pName = await dbGet(`projects/${projectId}/publicSettings/projectName`);
+            if (!pName) {
+                const s = await dbGet(`projects/${projectId}/settings`);
+                pName = s?.projectName;
+            }
+            if (pName) {
+                document.getElementById('page-title').innerHTML = `<i class="fa-solid fa-qrcode"></i> ${escapeHtml(pName)} 受付`;
             }
             loadStats();
         })();
@@ -83,6 +87,25 @@ if (!projectId) {
             resultDiv.innerHTML = '<div>⏳ 読み込み中...</div>';
         }
 
+        // 参加者名の取得（E2E暗号化対応）
+        async function getEntryName(data) {
+            if (data.encryptedPII) {
+                const privJwkStr = session.get('privateKeyJwk');
+                if (privJwkStr) {
+                    try {
+                        const privJwk = JSON.parse(privJwkStr);
+                        const jsonStr = await AppCrypto.decryptRSA(data.encryptedPII, privJwk);
+                        const pii = JSON.parse(jsonStr);
+                        return `${pii.familyName || ''} ${pii.firstName || ''}`.trim();
+                    } catch(e) { console.warn('PII復号失敗:', e); }
+                }
+                return `受付番号 ${padNum(data.entryNumber)}`;
+            }
+            // 旧形式（暗号化なし）
+            if (data.familyName) return `${data.familyName} ${data.firstName || ''}`;
+            return `受付番号 ${padNum(data.entryNumber)}`;
+        }
+
         // Firebase直接参照
         async function processQR(uuid) {
             try {
@@ -91,13 +114,14 @@ if (!projectId) {
                 if (!data) {
                     showResultUI('error', '<i class="fa-solid fa-xmark"></i> 該当者が見つかりません', '', '');
                 } else {
+                    const name = await getEntryName(data);
                     if (data.status === 'canceled') {
-                        showResultUI('canceled', '<i class="fa-solid fa-xmark"></i> キャンセル済み', `${data.familyName} ${data.firstName}`, `受付番号 ${padNum(data.entryNumber)}`);
+                        showResultUI('canceled', '<i class="fa-solid fa-xmark"></i> キャンセル済み', name, `受付番号 ${padNum(data.entryNumber)}`);
                     } else if (data.checkedIn) {
-                        showResultUI('already', '<i class="fa-solid fa-triangle-exclamation"></i>️ 受付済み', `${data.familyName} ${data.firstName}`, `受付番号 ${padNum(data.entryNumber)}`);
+                        showResultUI('already', '<i class="fa-solid fa-triangle-exclamation"></i>️ 受付済み', name, `受付番号 ${padNum(data.entryNumber)}`);
                     } else {
                         await dbSet(`projects/${projectId}/entries/${uuid}/checkedIn`, true);
-                        showResultUI('success', '<i class="fa-solid fa-check"></i> 受付完了', `${data.familyName} ${data.firstName}`, `受付番号 ${padNum(data.entryNumber)}`);
+                        showResultUI('success', '<i class="fa-solid fa-check"></i> 受付完了', name, `受付番号 ${padNum(data.entryNumber)}`);
                         loadStats();
                     }
                 }

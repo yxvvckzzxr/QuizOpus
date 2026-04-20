@@ -2,7 +2,6 @@
 
 const params = new URLSearchParams(location.search);
     const projectId = params.get('pid');
-    const secretHash = params.get('secret');
 
     if (!projectId) {
         document.querySelector('.page-container').innerHTML = '<div class="page-card page-disabled"><i class="fa-solid fa-ban"></i><p>プロジェクトが指定されていません。</p><p style="margin-top:8px;font-size:13px">正しいリンクからアクセスしてください。</p></div>';
@@ -69,7 +68,7 @@ const params = new URLSearchParams(location.search);
             }
 
             // 開示データ取得
-            const disc = await dbGet(`projects/${projectId}/protected/${secretHash}/disclosure/${num}`);
+            const disc = await dbGet(`projects/${projectId}/disclosure/${num}`);
             if (!disc) {
                 errEl.textContent = '開示データがまだ生成されていません。管理者にお問い合わせください。';
                 errEl.style.display = 'block'; btn.disabled = false; btn.textContent = '成績を確認する'; return;

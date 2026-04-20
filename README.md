@@ -50,10 +50,8 @@ app/
 │   ├── cv.js           # OpenCV.js ラッパー（答案スキャン用）
 │   └── aruco.js        # ArUcoマーカー検出
 ├── fonts/
-│   └── BIZUDGothic-Regular.ttf  # PDF日本語フォント
+│   └── BIZUDGothic-Subset.ttf  # PDF日本語フォント（サブセット済み）
 ├── aruco_markers/      # 回答用紙用マーカー画像 (4枚)
-├── reference/
-│   └── gas_mail_api.js # GAS メール送信APIリファレンス
 └── database.rules.json # Firebase セキュリティルール
 ```
 

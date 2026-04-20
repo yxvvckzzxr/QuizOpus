@@ -396,24 +396,35 @@
                         results
                     };
                 });
-                await dbUpdate(`projects/${projectId}/protected/${secretHash}/disclosure`, disclosureData);
+                await dbUpdate(`projects/${projectId}/disclosure`, disclosureData);
             } catch (e) {
                 console.error('開示連携エラー:', e);
             }
         }
 
-        async function exportProjectData() {
-            const btn = event.target;
+        async function exportProjectData(btnEl) {
+            const btn = btnEl || document.querySelector('[onclick*="exportProjectData"]');
+            if (!btn) return;
             const originalText = btn.textContent;
             try {
                 btn.innerHTML = '<i class="fa-solid fa-box-archive"></i> データ取得中...';
                 btn.disabled = true;
-                const sections = ['settings', 'config', 'answers', 'answers_text', 'scores', 'entries', 'entryConfig', 'disclosure'];
                 const data = {};
-                for (const sec of sections) {
+                // protected配下のデータを取得
+                const protectedSections = ['config', 'answers', 'answers_text', 'scores', 'entryConfig', 'settings'];
+                for (const sec of protectedSections) {
+                    const secData = await dbGet(`projects/${projectId}/protected/${secretHash}/${sec}`);
+                    if (secData) data[sec] = secData;
+                }
+                // プロジェクト直下のデータ
+                const rootSections = ['entries', 'disclosure'];
+                for (const sec of rootSections) {
                     const secData = await dbGet(`projects/${projectId}/${sec}`);
                     if (secData) data[sec] = secData;
                 }
+                // publicSettings
+                const pubSettings = await dbGet(`projects/${projectId}/publicSettings`);
+                if (pubSettings) data.publicSettings = pubSettings;
                 
                 if (Object.keys(data).length === 0) {
                     showAdminToast('エクスポートするデータが見つかりません。');
@@ -422,8 +433,8 @@
                     return;
                 }
                 
-                // Get project name if available, else use ID
-                const pName = data.settings?.projectName || projectId;
+                // Get project name if available
+                const pName = data.publicSettings?.projectName || pubSettings?.projectName || projectId;
                 
                 // JSON to Blob
                 const jsonStr = JSON.stringify(data, null, 2);
@@ -507,7 +518,7 @@
                     dbGet(`projects/${projectId}/protected/${secretHash}/settings`),
                     dbShallow(`projects/${projectId}/protected/${secretHash}/answers`)
                 ]);
-                const modelAnswers = await dbGet(`projects/${projectId}/config/answers`);
+                const modelAnswers = await dbShallow(`projects/${projectId}/protected/${secretHash}/answers_text`);
                 const entriesCount = await dbShallow(`projects/${projectId}/entries`);
 
                 const steps = [

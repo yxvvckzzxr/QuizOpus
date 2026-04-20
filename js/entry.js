@@ -126,33 +126,6 @@ const params = new URLSearchParams(location.search);
                 // DBに保存
                 await dbSet(`projects/${projectId}/entries/${uuid}`, entryData);
 
-                // GAS APIを呼び出してメール送信
-                if (typeof SYSTEM_GAS_URL !== 'undefined' && SYSTEM_GAS_URL.startsWith('http')) {
-                    try {
-                        const pName = document.getElementById('project-title').textContent;
-                        const mailParams = new URLSearchParams({
-                            action: 'entryMail',
-                            projectName: pName,
-                            email,
-                            familyName,
-                            firstName,
-                            entryNumber,
-                            pw,
-                            uuid
-                        });
-
-                        fetch(SYSTEM_GAS_URL + '?' + mailParams.toString())
-                            .then(r => r.text())
-                            .then(t => console.log('メール送信完了'))
-                            .catch(e => {
-                                console.warn('メール送信失敗:', e);
-                                showToast('確認メールの送信に失敗しました。エントリー自体は完了しています。', 'error', 5000);
-                            });
-                    } catch (e) {
-                        console.warn('メール送信準備エラー:', e);
-                    }
-                }
-
                 // 成功画面を表示
                 document.getElementById('form-card').style.display = 'none';
                 document.getElementById('result-card').style.display = 'block';
@@ -164,7 +137,7 @@ const params = new URLSearchParams(location.search);
                 if (entryStatus === 'waitlist') {
                     const waitMsg = document.createElement('div');
                     waitMsg.className = 'status-msg warning';
-                    waitMsg.innerHTML = '<i class="fa-solid fa-clock"></i> 定員に達したため、<strong>キャンセル待ち</strong>として登録されました。キャンセルが出た場合、メールでお知らせします。';
+                    waitMsg.innerHTML = '<i class="fa-solid fa-clock"></i> 定員に達したため、<strong>キャンセル待ち</strong>として登録されました。';
                     waitMsg.style.cssText = 'display:block;margin:12px 0;padding:12px 16px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:8px;color:#fbbf24;font-size:13px;';
                     document.getElementById('r-entry-number').parentElement.after(waitMsg);
                 }
@@ -276,5 +249,23 @@ const params = new URLSearchParams(location.search);
             } catch (e) {
             }
         }
+
+        // クレデンシャルをクリップボードにコピー
+        async function copyCredentials() {
+            const num = document.getElementById('r-entry-number').textContent;
+            const pw = document.getElementById('r-password').textContent;
+            const text = `受付番号: ${num}\nパスワード: ${pw}`;
+            try {
+                await navigator.clipboard.writeText(text);
+                const btn = document.getElementById('copy-credentials-btn');
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> コピーしました！';
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fa-solid fa-copy"></i> 受付番号とパスワードをコピー';
+                }, 2000);
+            } catch(e) {
+                showToast('コピーに失敗しました。手動でコピーしてください。', 'error');
+            }
+        }
+        window.copyCredentials = copyCredentials;
 
         init();
