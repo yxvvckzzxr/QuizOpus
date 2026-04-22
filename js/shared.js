@@ -1,5 +1,5 @@
 /**
- * QuizOpus 共通ユーティリティ (shared.js)
+ * CIQ 共通ユーティリティ (shared.js)
  * 
  * 全ページで使い回す関数・定数を集約。
  * config.js, crypto.js の後に読み込むこと。

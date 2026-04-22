@@ -18,7 +18,7 @@ const AppCrypto = {
             "raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveKey"]
         );
         // Using a fixed static salt for simplicity since hashes are per-project
-        const salt = enc.encode("QuizOpus_Salt_2026");
+        const salt = enc.encode("CIQ_Salt_2026");
         return crypto.subtle.deriveKey(
             { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
             keyMaterial,
