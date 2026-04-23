@@ -1314,8 +1314,9 @@ textarea::placeholder { color: var(--text-faint); }
 
 /* Date Picker Overlay */
 .dt-overlay {
-  display: none; position: fixed; inset: 0; z-index: 9998;
+  position: fixed; inset: 0; z-index: 9998; background: transparent; cursor: default;
 }
+.dt-overlay[hidden] { display: none; }
 .hidden-canvas { display: none; }
 .time-colon { font-weight: 700; }
 .time-icon { color: var(--text-muted); }
