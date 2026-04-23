@@ -10,7 +10,7 @@
     <meta property="og:description" content="クイズ大会の解答採点を支援するウェブプラットフォーム">
     <meta property="og:type" content="website">
     <meta property="og:image" content="favicon.png">
-    <title>CIQ - 成績照合</title>
+    <title>CIQ - 成績照会</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -26,16 +26,16 @@
         <div class="page-logo">
             <span class="logo-icon"><i class="fa-solid fa-chart-column"></i></span>
             <h1 id="logo-title"><i class="fa-solid fa-spinner fa-spin"></i> 読み込み中...</h1>
-            <div class="logo-sub" id="logo-subtitle">成績照合</div>
+            <div class="logo-sub" id="logo-subtitle">成績照会</div>
         </div>
 
         <div class="page-card" id="login-card">
             <div class="form-group">
-                <label><i class="fa-solid fa-hashtag"></i> 受付番号</label>
-                <input type="text" class="page-input" id="entry-number" maxlength="3" placeholder="001" inputmode="numeric" autocomplete="off">
+                <label><i class="fa-solid fa-envelope"></i> メールアドレス</label>
+                <input type="email" class="page-input" id="f-email" placeholder="example@gmail.com" autocomplete="off">
             </div>
             <div class="form-group">
-                <label><i class="fa-solid fa-key"></i> パスワード (連携用英数字6桁)</label>
+                <label><i class="fa-solid fa-key"></i> パスワード</label>
                 <input type="text" class="page-input" id="pw-input" maxlength="6" placeholder="------" autocomplete="off">
             </div>
             <button class="page-btn" id="submit-btn" onclick="checkDisclosure()"><i class="fa-solid fa-unlock"></i> 成績を確認する</button>

@@ -1,4 +1,4 @@
-// disclosure.js — 成績照合（Firebase SDK版）
+// disclosure.js — 成績照会（メールアドレス + パスワード認証）
 
 const params = new URLSearchParams(location.search);
     const projectId = params.get('pid');
@@ -16,40 +16,35 @@ const params = new URLSearchParams(location.search);
             let pName = await dbGet(`projects/${projectId}/publicSettings/projectName`);
             if (!pName) pName = await dbGet(`projects/${projectId}/settings/projectName`);
             document.getElementById('logo-title').textContent = pName || projectId;
-            document.title = (pName || projectId) + ' - 成績照合';
+            document.title = (pName || projectId) + ' - 成績照会';
         } catch(e) {
             document.getElementById('logo-title').textContent = projectId;
         }
     }
 
     async function checkDisclosure() {
-        const entryNum = document.getElementById('entry-number').value.trim();
+        const email = document.getElementById('f-email').value.trim();
         const pw = document.getElementById('pw-input').value.trim();
         const errEl = document.getElementById('error-msg');
         const btn = document.getElementById('submit-btn');
 
         errEl.style.display = 'none';
 
-        if (!entryNum || !pw) {
-            errEl.textContent = '受付番号とパスワードを入力してください。';
-            errEl.style.display = 'block'; return;
-        }
-
-        const num = parseInt(entryNum, 10);
-        if (isNaN(num) || num < 1) {
-            errEl.textContent = '正しい受付番号を入力してください。';
+        if (!email || !pw) {
+            errEl.textContent = 'メールアドレスとパスワードを入力してください。';
             errEl.style.display = 'block'; return;
         }
 
         btn.disabled = true; btn.textContent = '確認中...';
 
         try {
-            // パスワード照合: entries から entryNumber で検索
-            const entriesData = await dbQuery(`projects/${projectId}/entries`, 'entryNumber', num);
+            // メールアドレスのハッシュで検索
+            const emailHash = await AppCrypto.hashPassword(email.toLowerCase());
+            const entriesData = await dbQuery(`projects/${projectId}/entries`, 'emailHash', emailHash);
 
             if (!entriesData || Object.keys(entriesData).length === 0) {
-                errEl.textContent = '該当する受付番号が見つかりません。';
-                errEl.style.display = 'block'; btn.disabled = false; btn.textContent = '成績を確認する'; return;
+                errEl.textContent = '該当するメールアドレスが見つかりません。';
+                errEl.style.display = 'block'; btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-unlock"></i> 成績を確認する'; return;
             }
 
             let matched = false;
@@ -64,14 +59,16 @@ const params = new URLSearchParams(location.search);
 
             if (!matched) {
                 errEl.textContent = 'パスワードが正しくありません。';
-                errEl.style.display = 'block'; btn.disabled = false; btn.textContent = '成績を確認する'; return;
+                errEl.style.display = 'block'; btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-unlock"></i> 成績を確認する'; return;
             }
+
+            const num = entryData.entryNumber;
 
             // 開示データ取得
             const disc = await dbGet(`projects/${projectId}/disclosure/${num}`);
             if (!disc) {
                 errEl.textContent = '開示データがまだ生成されていません。管理者にお問い合わせください。';
-                errEl.style.display = 'block'; btn.disabled = false; btn.textContent = '成績を確認する'; return;
+                errEl.style.display = 'block'; btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-unlock"></i> 成績を確認する'; return;
             }
 
             showResult(entryData.entryName || `受付番号 ${num}`, disc.score, disc.results, disc.totalQuestions || 100);
@@ -80,7 +77,7 @@ const params = new URLSearchParams(location.search);
             errEl.textContent = 'エラーが発生しました。もう一度お試しください。';
             errEl.style.display = 'block';
         }
-        btn.disabled = false; btn.textContent = '成績を確認する';
+        btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-unlock"></i> 成績を確認する';
     }
 
     function showResult(name, score, results, total) {
