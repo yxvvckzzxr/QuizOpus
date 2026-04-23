@@ -70,13 +70,14 @@ const { projectId, secretHash } = auth;
 
             // キャッシュから画像データを構築
             const cellCache = window._cellImagesCache || {};
+            const needsImageLoad = [];
             conflicts.forEach(c => {
                 if (!answersData[c.entryNum]) answersData[c.entryNum] = { cells: {} };
                 if (answersData[c.entryNum].cells[`q${c.q}`] === undefined) {
-                    // 優先: 1) answerCells(最速) → 2) 旧pageImage+crop → 3) 旧cells
+                    // 優先: 1) answerCells(最速) → 2) 旧pageImage+crop → 3) answerImages+crop → 4) null
                     const cellImg = cellCache[`q${c.q}`]?.[c.entryNum];
                     if (cellImg) {
-                        answersData[c.entryNum].cells[`q${c.q}`] = cellImg; // Base64直接
+                        answersData[c.entryNum].cells[`q${c.q}`] = cellImg;
                     } else {
                         const ansData = answersDataCache[c.entryNum];
                         const region = ansData?.cellRegions?.[`q${c.q}`];
@@ -86,12 +87,34 @@ const { projectId, secretHash } = auth;
                                 x: region.x, y: region.y, w: region.w, h: region.h,
                                 pageW: ansData.pageWidth
                             };
+                        } else if (region && ansData?.pageWidth) {
+                            answersData[c.entryNum].cells[`q${c.q}`] = {
+                                type: 'crop', url: null,
+                                x: region.x, y: region.y, w: region.w, h: region.h,
+                                pageW: ansData.pageWidth
+                            };
+                            needsImageLoad.push(c.entryNum);
                         } else {
                             answersData[c.entryNum].cells[`q${c.q}`] = ansData?.cells?.[`q${c.q}`] || null;
                         }
                     }
                 }
             });
+            // answerImagesからの遅延ロード
+            if (needsImageLoad.length > 0) {
+                const unique = [...new Set(needsImageLoad)];
+                Promise.all(unique.map(async entryNum => {
+                    if (answersDataCache[entryNum]?.pageImage) return;
+                    const img = await dbGet(`projects/${projectId}/protected/${secretHash}/answerImages/${entryNum}`);
+                    if (img) {
+                        answersDataCache[entryNum].pageImage = img;
+                        for (const key of Object.keys(answersData[entryNum]?.cells || {})) {
+                            const cell = answersData[entryNum].cells[key];
+                            if (cell?.type === 'crop' && cell.url === null) cell.url = img;
+                        }
+                    }
+                })).then(() => render());
+            }
             {
 
             currentConflicts = conflicts;

@@ -237,11 +237,12 @@
 
                 async function uploadEntry(a) {
                     try {
-                        // 1) メタデータ保存
+                        // 1) メタデータ保存（cellRegionsはフォールバック用に残す）
                         const metaPromise = dbSet(`projects/${projectId}/protected/${secretHash}/answers/${a.entryNumber}`, {
                             entryNumber: a.entryNumber,
                             page: a.page,
                             uploadedAt: SERVER_TIMESTAMP,
+                            cellRegions: a.cellRegions,
                             pageWidth: a.pageWidth
                         });
 

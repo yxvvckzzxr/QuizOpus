@@ -36,27 +36,53 @@ let requiredScorers = 3;
                 const allData = answersSnap.val();
                 entryNumbers = Object.keys(allData).map(Number).filter(n => n > 0).sort((a, b) => a - b);
 
+                const needsImageLoad = [];
                 entryNumbers.forEach(entryNum => {
                     answerDataCache[entryNum] = allData[entryNum];
                     if (!answers[entryNum]) answers[entryNum] = { cells: {} };
 
-                    // 優先順位: 1) answerCells(最速) → 2) 旧pageImage+crop → 3) 旧cells
+                    // 優先順位: 1) answerCells(最速) → 2) 旧pageImage+crop → 3) answerImages+crop → 4) null
                     if (cellImages && cellImages[entryNum]) {
                         answers[entryNum].cells[`q${currentQ}`] = cellImages[entryNum]; // Base64直接
                     } else {
                         const cellData = allData[entryNum];
                         const region = cellData?.cellRegions?.[`q${currentQ}`];
                         if (region && cellData?.pageImage && cellData?.pageWidth) {
+                            // 旧形式: pageImageがanswers内にある
                             answers[entryNum].cells[`q${currentQ}`] = {
                                 type: 'crop', url: cellData.pageImage,
                                 x: region.x, y: region.y, w: region.w, h: region.h,
                                 pageW: cellData.pageWidth
                             };
+                        } else if (region && cellData?.pageWidth) {
+                            // pageImageがanswerImagesに分離されている→後からロード
+                            answers[entryNum].cells[`q${currentQ}`] = {
+                                type: 'crop', url: null,
+                                x: region.x, y: region.y, w: region.w, h: region.h,
+                                pageW: cellData.pageWidth
+                            };
+                            needsImageLoad.push(entryNum);
                         } else {
                             answers[entryNum].cells[`q${currentQ}`] = cellData?.cells?.[`q${currentQ}`] || null;
                         }
                     }
                 });
+
+                // answerImagesからの遅延ロード（answerCellsが無い旧データ用）
+                if (needsImageLoad.length > 0) {
+                    const BATCH = 20;
+                    for (let i = 0; i < needsImageLoad.length; i += BATCH) {
+                        const batch = needsImageLoad.slice(i, i + BATCH);
+                        await Promise.all(batch.map(async entryNum => {
+                            const cell = answers[entryNum]?.cells[`q${currentQ}`];
+                            if (cell?.type === 'crop' && cell.url === null) {
+                                const img = await dbGet(`projects/${projectId}/protected/${secretHash}/answerImages/${entryNum}`);
+                                if (img) cell.url = img;
+                            }
+                        }));
+                        renderGrid();
+                    }
+                }
             }
 
             if (entryNumbers.length === 0) {
