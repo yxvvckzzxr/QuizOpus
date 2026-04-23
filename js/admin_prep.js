@@ -209,7 +209,19 @@
                         const cr = transformRegion(scanConfig.answerRegions[q], transform);
                         cellRegions[`q${q + 1}`] = { x: Math.round(cr.x), y: Math.round(cr.y), w: Math.round(cr.w), h: Math.round(cr.h) };
                     }
-                    scanAnswers.push({ page: i, entryNumber, cellRegions, tomboError: detectedResult.error, pageImage: workCanvas.toDataURL('image/webp', 0.3), pageWidth: workCanvas.width });
+                    // ページ画像を縮小してBase64化（RTDB転送高速化）
+                    const MAX_IMG_W = 1200;
+                    let pageDataUrl;
+                    if (workCanvas.width > MAX_IMG_W) {
+                        const ratio = MAX_IMG_W / workCanvas.width;
+                        const sc = document.createElement('canvas');
+                        sc.width = MAX_IMG_W; sc.height = Math.round(workCanvas.height * ratio);
+                        sc.getContext('2d').drawImage(workCanvas, 0, 0, sc.width, sc.height);
+                        pageDataUrl = sc.toDataURL('image/webp', 0.25);
+                    } else {
+                        pageDataUrl = workCanvas.toDataURL('image/webp', 0.25);
+                    }
+                    scanAnswers.push({ page: i, entryNumber, cellRegions, tomboError: detectedResult.error, pageImage: pageDataUrl, pageWidth: workCanvas.width });
                 }
 
                 overlayTitle.textContent = 'サーバーへ保存中...';
