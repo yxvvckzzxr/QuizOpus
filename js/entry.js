@@ -112,6 +112,7 @@ const params = new URLSearchParams(location.search);
                     uuid,
                     entryNumber,
                     encryptedPII,
+                    emailHash: await AppCrypto.hashPassword(email.toLowerCase()),
                     disclosurePw: pwHash,
                     status: entryStatus,
                     checkedIn: false,

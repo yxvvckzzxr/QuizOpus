@@ -1,4 +1,4 @@
-// cancel.js — キャンセル処理（Firebase SDK版）
+// cancel.js — キャンセル処理（メールアドレス + パスワード認証）
 
 const params = new URLSearchParams(location.search);
     let projectId = params.get('pid');
@@ -9,15 +9,18 @@ const params = new URLSearchParams(location.search);
     }
 
     // 大会名を取得して表示
+    let projectName = '';
     (async () => {
         if (!projectId) return;
         await waitForAuth();
         try {
             let pName = await dbGet(`projects/${projectId}/publicSettings/projectName`);
             if (!pName) pName = await dbGet(`projects/${projectId}/settings/projectName`);
-            document.getElementById('cancel-title').textContent = pName || projectId;
-            document.title = (pName || projectId) + ' - キャンセルフォーム';
+            projectName = pName || projectId;
+            document.getElementById('cancel-title').textContent = projectName;
+            document.title = projectName + ' - キャンセルフォーム';
         } catch(e) {
+            projectName = projectId;
             document.getElementById('cancel-title').textContent = projectId;
         }
     })();
@@ -30,15 +33,13 @@ const params = new URLSearchParams(location.search);
     }
 
     async function processCancel() {
-        const numStr = document.getElementById('f-number').value.trim();
+        const email = document.getElementById('f-email').value.trim();
         const pw = document.getElementById('f-password').value.trim();
 
-        if (!numStr || !pw) {
-            showStatus('受付番号とパスワードを入力してください。', 'error');
+        if (!email || !pw) {
+            showStatus('メールアドレスとパスワードを入力してください。', 'error');
             return;
         }
-
-        const entryNum = parseInt(numStr, 10);
 
         const btn = document.getElementById('submit-btn');
         btn.disabled = true;
@@ -46,11 +47,12 @@ const params = new URLSearchParams(location.search);
         showStatus('データを確認しています...', '');
 
         try {
-            // 受付番号で検索
-            const entriesData = await dbQuery(`projects/${projectId}/entries`, 'entryNumber', entryNum);
+            // メールアドレスのハッシュで検索
+            const emailHash = await AppCrypto.hashPassword(email.toLowerCase());
+            const entriesData = await dbQuery(`projects/${projectId}/entries`, 'emailHash', emailHash);
 
             if (!entriesData || Object.keys(entriesData).length === 0) {
-                showStatus('指定された受付番号が見つかりません。', 'error');
+                showStatus('指定されたメールアドレスに一致するエントリーが見つかりません。', 'error');
                 btn.disabled = false; btn.textContent = 'キャンセルを確定する';
                 return;
             }
@@ -62,7 +64,6 @@ const params = new URLSearchParams(location.search);
             const pwHash = await AppCrypto.hashPassword(pw);
 
             for (const [key, data] of Object.entries(entriesData)) {
-                // パスワードハッシュで認証（E2E暗号化対応：メールは照合不可なのでPW＋受付番号で認証）
                 if (data.disclosurePw === pwHash || data.disclosurePw === pw) {
                     targetKey = key;
                     targetData = data;
@@ -82,6 +83,16 @@ const params = new URLSearchParams(location.search);
                 return;
             }
 
+            const entryNum = targetData.entryNumber;
+
+            // 確認ダイアログ
+            if (!confirm(`受付番号 ${entryNum} のエントリーをキャンセルします。\nこの操作は取り消せません。よろしいですか？`)) {
+                btn.disabled = false; btn.textContent = 'キャンセルを確定する';
+                showStatus('', '');
+                document.getElementById('status-msg').style.display = 'none';
+                return;
+            }
+
             // 更新処理
             await dbUpdate(`projects/${projectId}/entries/${targetKey}`, {
                 status: 'canceled',
@@ -89,20 +100,19 @@ const params = new URLSearchParams(location.search);
             });
 
             // メール通知（非同期・失敗しても処理済み）
-            try {
-                if (targetData.encryptedPII) {
-                    // 暗号化PIIからメールを取得するにはprivateKeyが必要
-                    // キャンセルフォームにはprivateKeyがないので、メール送信はスキップ
-                    // → 管理者側でキャンセル通知が必要な場合は管理画面から対応
-                    console.log('[Cancel] PII暗号化済み — メール送信にはprivateKeyが必要のためスキップ');
-                }
-            } catch(e) { console.warn('キャンセルメール送信スキップ:', e); }
+            CIQEmail.sendCancellation(email, {
+                projectName: projectName || projectId,
+                entryNumber: String(entryNum).padStart(3, '0'),
+                familyName: '',
+                firstName: '',
+            }).catch(e => console.warn('キャンセルメール送信スキップ:', e));
 
             document.getElementById('form-card').innerHTML = `
                 <div style="text-align:center;">
                     <h2 style="color:#ef5350;margin-bottom:16px;">キャンセル完了</h2>
                     <p style="color:#8e8ea0;line-height:1.6;">
                         受付番号 ${entryNum} のエントリーキャンセルを受け付けました。<br>
+                        確認メールを送信しました。<br>
                         ご利用ありがとうございました。
                     </p>
                 </div>

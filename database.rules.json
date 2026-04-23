@@ -8,7 +8,8 @@
         },
         "entries": {
           ".read": "auth != null",
-          ".write": "auth != null"
+          ".write": "auth != null",
+          ".indexOn": ["entryNumber", "emailHash"]
         },
         "protected": {
           "$secretHash": {
