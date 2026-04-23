@@ -388,9 +388,13 @@
                     removePath(`${protectedBase}/scores`),
                     removePath(`${protectedBase}/answers`),
                     removePath(`${protectedBase}/answers_text`),
+                    removePath(`${protectedBase}/answerCells`),
+                    removePath(`${protectedBase}/answerImages`),
                     removePath(`projects/${projectId}/entries`),
                     removePath(`projects/${projectId}/disclosure`),
                 ]);
+                // 受付番号カウンターをリセット
+                await dbSet(`projects/${projectId}/publicSettings/lastEntryNumber`, 0);
 
                 showAdminToast('プロジェクトをリセットしました。ページを再読み込みします。', 'success', 3000);
                 setTimeout(() => { location.reload(); }, 2000);
