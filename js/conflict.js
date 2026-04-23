@@ -17,10 +17,11 @@ const { projectId, secretHash } = auth;
 
         async function init() {
             await waitForAuth();
-            // config, 全答案データ, 模範解答を並列取得
-            const [config, allAnswersData, answersTextData, rs] = await Promise.all([
+            // config, メタデータ, クロップ済み画像, 模範解答を並列取得
+            const [config, allAnswersData, allCellImages, answersTextData, rs] = await Promise.all([
                 dbGet(`projects/${projectId}/protected/${secretHash}/config`),
                 dbGet(`projects/${projectId}/protected/${secretHash}/answers`).catch(e => { console.error('答案取得エラー:', e); return null; }),
+                dbGet(`projects/${projectId}/protected/${secretHash}/answerCells`).catch(() => null),
                 dbGet(`projects/${projectId}/protected/${secretHash}/answers_text`),
                 dbGet(`projects/${projectId}/protected/${secretHash}/requiredScorers`)
             ]);
@@ -31,6 +32,7 @@ const { projectId, secretHash } = auth;
                 answersDataCache = allAnswersData;
                 entryNumbers = Object.keys(allAnswersData).map(Number).filter(n => n > 0).sort((a, b) => a - b);
             }
+            if (allCellImages) window._cellImagesCache = allCellImages;
             if (answersTextData) answersText = answersTextData;
 
             // スコアリスナー即開始
@@ -66,50 +68,30 @@ const { projectId, secretHash } = auth;
                 });
             }
 
-            // キャッシュから画像データを構築（ネットワーク不要 or 遅延ロード）
-            const needsImageLoad = [];
+            // キャッシュから画像データを構築
+            const cellCache = window._cellImagesCache || {};
             conflicts.forEach(c => {
                 if (!answersData[c.entryNum]) answersData[c.entryNum] = { cells: {} };
                 if (answersData[c.entryNum].cells[`q${c.q}`] === undefined) {
-                    const ansData = answersDataCache[c.entryNum];
-                    const region = ansData?.cellRegions?.[`q${c.q}`];
-                    // 旧形式（pageImageがanswersに含まれる）
-                    if (region && ansData?.pageImage && ansData?.pageWidth) {
-                        answersData[c.entryNum].cells[`q${c.q}`] = {
-                            type: 'crop', url: ansData.pageImage,
-                            x: region.x, y: region.y, w: region.w, h: region.h,
-                            pageW: ansData.pageWidth
-                        };
-                    } else if (region && ansData?.pageWidth) {
-                        // 新形式：画像は後からロード
-                        answersData[c.entryNum].cells[`q${c.q}`] = {
-                            type: 'crop', url: null,
-                            x: region.x, y: region.y, w: region.w, h: region.h,
-                            pageW: ansData.pageWidth
-                        };
-                        needsImageLoad.push(c.entryNum);
+                    // 優先: 1) answerCells(最速) → 2) 旧pageImage+crop → 3) 旧cells
+                    const cellImg = cellCache[`q${c.q}`]?.[c.entryNum];
+                    if (cellImg) {
+                        answersData[c.entryNum].cells[`q${c.q}`] = cellImg; // Base64直接
                     } else {
-                        const cellUrl = ansData?.cells?.[`q${c.q}`] || null;
-                        answersData[c.entryNum].cells[`q${c.q}`] = cellUrl;
+                        const ansData = answersDataCache[c.entryNum];
+                        const region = ansData?.cellRegions?.[`q${c.q}`];
+                        if (region && ansData?.pageImage && ansData?.pageWidth) {
+                            answersData[c.entryNum].cells[`q${c.q}`] = {
+                                type: 'crop', url: ansData.pageImage,
+                                x: region.x, y: region.y, w: region.w, h: region.h,
+                                pageW: ansData.pageWidth
+                            };
+                        } else {
+                            answersData[c.entryNum].cells[`q${c.q}`] = ansData?.cells?.[`q${c.q}`] || null;
+                        }
                     }
                 }
             });
-            // 画像がまだ無いエントリーを非同期ロード
-            if (needsImageLoad.length > 0) {
-                const unique = [...new Set(needsImageLoad)];
-                Promise.all(unique.map(async entryNum => {
-                    if (answersDataCache[entryNum]?.pageImage) return;
-                    const img = await dbGet(`projects/${projectId}/protected/${secretHash}/answerImages/${entryNum}`);
-                    if (img) {
-                        answersDataCache[entryNum].pageImage = img;
-                        // 該当セルのURLを更新
-                        for (const key of Object.keys(answersData[entryNum]?.cells || {})) {
-                            const cell = answersData[entryNum].cells[key];
-                            if (cell?.type === 'crop' && cell.url === null) cell.url = img;
-                        }
-                    }
-                })).then(() => render());
-            }
             {
 
             currentConflicts = conflicts;

@@ -209,7 +209,7 @@
                         const cr = transformRegion(scanConfig.answerRegions[q], transform);
                         cellRegions[`q${q + 1}`] = { x: Math.round(cr.x), y: Math.round(cr.y), w: Math.round(cr.w), h: Math.round(cr.h) };
                     }
-                    // ページ画像を縮小してBase64化（RTDB転送高速化）
+                    // ページ画像を縮小してBase64化（プレビュー用）
                     const MAX_IMG_W = 1200;
                     let pageDataUrl;
                     if (workCanvas.width > MAX_IMG_W) {
@@ -221,7 +221,11 @@
                     } else {
                         pageDataUrl = workCanvas.toDataURL('image/webp', 0.25);
                     }
-                    scanAnswers.push({ page: i, entryNumber, cellRegions, tomboError: detectedResult.error, pageImage: pageDataUrl, pageWidth: workCanvas.width });
+                    // セルクロップ用にcanvasの内容を保持
+                    const fullCanvas = document.createElement('canvas');
+                    fullCanvas.width = workCanvas.width; fullCanvas.height = workCanvas.height;
+                    fullCanvas.getContext('2d').drawImage(workCanvas, 0, 0);
+                    scanAnswers.push({ page: i, entryNumber, cellRegions, tomboError: detectedResult.error, pageImage: pageDataUrl, pageWidth: workCanvas.width, fullCanvas });
                 }
 
                 overlayTitle.textContent = 'サーバーへ保存中...';
@@ -233,17 +237,28 @@
 
                 async function uploadEntry(a) {
                     try {
-                        // メタデータと画像を分離保存（読み込み高速化のため）
-                        await Promise.all([
-                            dbSet(`projects/${projectId}/protected/${secretHash}/answers/${a.entryNumber}`, {
-                                entryNumber: a.entryNumber,
-                                page: a.page,
-                                uploadedAt: SERVER_TIMESTAMP,
-                                cellRegions: a.cellRegions,
-                                pageWidth: a.pageWidth
-                            }),
-                            dbSet(`projects/${projectId}/protected/${secretHash}/answerImages/${a.entryNumber}`, a.pageImage)
-                        ]);
+                        // 1) メタデータ保存
+                        const metaPromise = dbSet(`projects/${projectId}/protected/${secretHash}/answers/${a.entryNumber}`, {
+                            entryNumber: a.entryNumber,
+                            page: a.page,
+                            uploadedAt: SERVER_TIMESTAMP,
+                            pageWidth: a.pageWidth
+                        });
+
+                        // 2) 全ページ画像（プレビュー用）
+                        const imgPromise = dbSet(`projects/${projectId}/protected/${secretHash}/answerImages/${a.entryNumber}`, a.pageImage);
+
+                        // 3) 問題ごとのクロップ画像を保存（採点画面高速化）
+                        const cellUpdates = {};
+                        for (const [qKey, region] of Object.entries(a.cellRegions)) {
+                            const cropped = cropCell(a.fullCanvas, region);
+                            if (cropped) cellUpdates[`${qKey}/${a.entryNumber}`] = cropped;
+                        }
+                        const cellPromise = Object.keys(cellUpdates).length > 0
+                            ? dbUpdate(`projects/${projectId}/protected/${secretHash}/answerCells`, cellUpdates)
+                            : Promise.resolve();
+
+                        await Promise.all([metaPromise, imgPromise, cellPromise]);
                     } catch (e) {
                         console.error(`Entry ${a.entryNumber} upload error:`, e);
                         showAdminToast(`受付番号 ${padNum(a.entryNumber)}: 保存失敗`, 'error');
@@ -299,6 +314,17 @@
         function readEntryNumber(markCells) { const rows = [[], [], []]; markCells.forEach(c => { if (c.row === undefined) return; rows[c.row].push({ col: c.col, darkness: getMeanDarkness(c) }); }); return rows.map(r => { if (!r.length) return 0; return [...r].sort((a, b) => b.darkness - a.darkness)[0].col; }).reduce((a, d, i) => a + d * Math.pow(10, 2 - i), 0); }
         function getMeanDarkness(r) { const x = Math.round(Math.max(0, r.x)), y = Math.round(Math.max(0, r.y)), w = Math.max(1, Math.round(Math.min(r.w, workCanvas.width - x))), h = Math.max(1, Math.round(Math.min(r.h, workCanvas.height - y))); const d = workCtx.getImageData(x, y, w, h); let t = 0; for (let i = 0; i < d.data.length; i += 4)t += (255 - (d.data[i] + d.data[i + 1] + d.data[i + 2]) / 3); return t / (d.data.length / 4); }
         function cutRegion(r) { const x = Math.round(Math.max(0, r.x)), y = Math.round(Math.max(0, r.y)), w = Math.max(1, Math.round(Math.min(r.w, workCanvas.width - x))), h = Math.max(1, Math.round(Math.min(r.h, workCanvas.height - y))); const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(workCanvas, x, y, w, h, 0, 0, w, h); return c.toDataURL('image/webp', 0.7); }
+        // 任意canvasから指定領域をクロップしてBase64化
+        function cropCell(srcCanvas, region) {
+            const x = Math.round(Math.max(0, region.x));
+            const y = Math.round(Math.max(0, region.y));
+            const w = Math.max(1, Math.round(Math.min(region.w, srcCanvas.width - x)));
+            const h = Math.max(1, Math.round(Math.min(region.h, srcCanvas.height - y)));
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            c.getContext('2d').drawImage(srcCanvas, x, y, w, h, 0, 0, w, h);
+            return c.toDataURL('image/webp', 0.5);
+        }
 
 
 

@@ -22,62 +22,46 @@ let requiredScorers = 3;
 
         async function init() {
             await waitForAuth();
-            // 模範解答・エントリーキー一覧・採点者数を並列取得（画像データはまだ取らない）
-            const answersRef = dbRef(`projects/${projectId}/protected/${secretHash}/answers`);
-            const [answerText, keysSnap, rs] = await Promise.all([
+            // 模範解答・クロップ済み画像・エントリーキー一覧・採点者数を並列取得
+            const [answerText, cellImages, answersSnap, rs] = await Promise.all([
                 dbGet(`projects/${projectId}/protected/${secretHash}/answers_text/${currentQ}`),
-                answersRef.orderByKey().get(),
+                dbGet(`projects/${projectId}/protected/${secretHash}/answerCells/q${currentQ}`),
+                dbRef(`projects/${projectId}/protected/${secretHash}/answers`).orderByKey().get(),
                 dbGet(`projects/${projectId}/protected/${secretHash}/requiredScorers`)
             ]);
             if (rs) requiredScorers = rs;
             document.getElementById('answer-badge').textContent = answerText || '未設定';
 
-            if (keysSnap.exists()) {
-                const allData = keysSnap.val();
+            if (answersSnap.exists()) {
+                const allData = answersSnap.val();
                 entryNumbers = Object.keys(allData).map(Number).filter(n => n > 0).sort((a, b) => a - b);
 
-                // メタデータだけ先にセット（画像はまだ無い状態で描画開始）
                 entryNumbers.forEach(entryNum => {
                     answerDataCache[entryNum] = allData[entryNum];
                     if (!answers[entryNum]) answers[entryNum] = { cells: {} };
-                    // cellRegionsとpageWidthだけ先に保持
-                    const cellData = allData[entryNum];
-                    const region = cellData?.cellRegions?.[`q${currentQ}`];
-                    // 旧形式（pageImageがanswersに含まれるケース）の後方互換
-                    if (region && cellData?.pageImage && cellData?.pageWidth) {
-                        answers[entryNum].cells[`q${currentQ}`] = {
-                            type: 'crop', url: cellData.pageImage,
-                            x: region.x, y: region.y, w: region.w, h: region.h,
-                            pageW: cellData.pageWidth
-                        };
-                    } else if (region && cellData?.pageWidth) {
-                        // 新形式：画像は後からロード
-                        answers[entryNum].cells[`q${currentQ}`] = {
-                            type: 'crop', url: null, // 後で埋める
-                            x: region.x, y: region.y, w: region.w, h: region.h,
-                            pageW: cellData.pageWidth
-                        };
+
+                    // 優先順位: 1) answerCells(最速) → 2) 旧pageImage+crop → 3) 旧cells
+                    if (cellImages && cellImages[entryNum]) {
+                        answers[entryNum].cells[`q${currentQ}`] = cellImages[entryNum]; // Base64直接
                     } else {
-                        answers[entryNum].cells[`q${currentQ}`] = cellData?.cells?.[`q${currentQ}`] || null;
+                        const cellData = allData[entryNum];
+                        const region = cellData?.cellRegions?.[`q${currentQ}`];
+                        if (region && cellData?.pageImage && cellData?.pageWidth) {
+                            answers[entryNum].cells[`q${currentQ}`] = {
+                                type: 'crop', url: cellData.pageImage,
+                                x: region.x, y: region.y, w: region.w, h: region.h,
+                                pageW: cellData.pageWidth
+                            };
+                        } else {
+                            answers[entryNum].cells[`q${currentQ}`] = cellData?.cells?.[`q${currentQ}`] || null;
+                        }
                     }
                 });
+            }
 
-                // 画像を並列で遅延ロード（UIは既に表示済み）
-                const LOAD_BATCH = 20;
-                for (let i = 0; i < entryNumbers.length; i += LOAD_BATCH) {
-                    const batch = entryNumbers.slice(i, i + LOAD_BATCH);
-                    await Promise.all(batch.map(async entryNum => {
-                        const cell = answers[entryNum]?.cells[`q${currentQ}`];
-                        if (cell?.type === 'crop' && cell.url === null) {
-                            const img = await dbGet(`projects/${projectId}/protected/${secretHash}/answerImages/${entryNum}`);
-                            if (img) {
-                                cell.url = img;
-                                answerDataCache[entryNum].pageImage = img;
-                            }
-                        }
-                    }));
-                    renderGrid(); // バッチごとにUIを更新
-                }
+            if (entryNumbers.length === 0) {
+                document.getElementById('answer-grid').innerHTML = '<div class="loading-state" style="grid-column:1/-1"><i class="fa-solid fa-inbox"></i> 答案データがありません</div>';
+                return;
             }
 
             // スコアリスナーを即開始（描画を最速にする）
