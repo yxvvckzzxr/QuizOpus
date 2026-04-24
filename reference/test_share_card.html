@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Share Card Test</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+JP:wght@400;700;900&display=swap">
+    <style>body { background: #1a1f2e; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; } img { max-width: 90vw; border-radius: 12px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }</style>
+</head>
+<body>
+    <div id="output">Generating...</div>
+    <script src="js/share_card.js"></script>
+    <script>
+        (async () => {
+            await document.fonts.ready;
+            const blob = await ShareCard.generate({
+                projectName: 'CIQ the 1st',
+                rank: '12位',
+                score: '64',
+                streaks: [8, 5]
+            });
+            const url = URL.createObjectURL(blob);
+            document.getElementById('output').innerHTML = `<img src="${url}">`;
+        })();
+    </script>
+</body>
+</html>

@@ -49,12 +49,26 @@
                 <div class="result-score-line"><span class="result-score" id="result-score"></span><span class="result-score-unit">pts</span></div>
                 <div class="result-streaks" id="result-streaks"></div>
             </div>
+
+            <!-- SNS共有エリア -->
+            <div id="share-area" style="display:none">
+                <div id="share-preview"></div>
+                <div class="share-buttons">
+                    <button class="share-btn share-x" onclick="shareToX()" title="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></button>
+                    <button class="share-btn share-instagram" onclick="shareToInstagram()" title="Instagram"><i class="fa-brands fa-instagram"></i></button>
+                    <button class="share-btn share-line" onclick="shareToLINE()" title="LINE"><i class="fa-brands fa-line"></i></button>
+                    <button class="share-btn share-facebook" onclick="shareToFacebook()" title="Facebook"><i class="fa-brands fa-facebook"></i></button>
+                    <button class="share-btn share-download" onclick="downloadShareImage()" title="画像を保存"><i class="fa-solid fa-download"></i></button>
+                </div>
+            </div>
+
             <button class="back-nav-btn" onclick="showLogin()" style="margin:20px auto 0;display:flex"><i class="fa-solid fa-chevron-left"></i> 戻る</button>
         </div>
 
         <div class="page-footer">Powered by CIQ</div>
     </div>
 
+    <script src="js/share_card.js"></script>
     <script src="js/disclosure.js"></script>
 </body>
 </html>

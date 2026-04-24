@@ -98,6 +98,106 @@ const params = new URLSearchParams(location.search);
         } else {
             streaksEl.innerHTML = '';
         }
+
+        // 共有画像を生成
+        generateShareCard(disc);
+    }
+
+    // ── SNS共有 ──
+    let shareBlob = null;
+    let shareProjectName = '';
+
+    function getShareText() {
+        const tag = '#' + shareProjectName.replace(/\s+/g, '');
+        return `${tag} に参加しました!!`;
+    }
+
+    async function generateShareCard(disc) {
+        shareProjectName = document.getElementById('logo-title').textContent || 'CIQ';
+        try {
+            shareBlob = await ShareCard.generate({
+                projectName: shareProjectName,
+                rank: disc.rank || '-',
+                score: disc.score ?? '-',
+                streaks: disc.streaks || [],
+            });
+
+            // プレビュー表示
+            const preview = document.getElementById('share-preview');
+            const url = URL.createObjectURL(shareBlob);
+            preview.innerHTML = `<img src="${url}" alt="共有カード" class="share-preview-img">`;
+
+            document.getElementById('share-area').style.display = 'block';
+        } catch(e) {
+            console.error('共有画像の生成に失敗:', e);
+        }
+    }
+
+    async function nativeShare(fallbackFn) {
+        if (navigator.share && navigator.canShare) {
+            const file = new File([shareBlob], 'ciq_result.png', { type: 'image/png' });
+            const shareData = { text: getShareText(), files: [file] };
+            if (navigator.canShare(shareData)) {
+                try {
+                    await navigator.share(shareData);
+                    return;
+                } catch(e) {
+                    if (e.name === 'AbortError') return;
+                }
+            }
+        }
+        // フォールバック
+        if (fallbackFn) fallbackFn();
+    }
+
+    function downloadBlob() {
+        if (!shareBlob) return;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(shareBlob);
+        a.download = 'ciq_result.png';
+        a.click();
+    }
+
+    function copyShareText() {
+        const text = getShareText();
+        navigator.clipboard.writeText(text).catch(() => {});
+    }
+
+    function shareToX() {
+        nativeShare(() => {
+            downloadBlob();
+            copyShareText();
+            const text = encodeURIComponent(getShareText());
+            window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+        });
+    }
+
+    function shareToInstagram() {
+        nativeShare(() => {
+            downloadBlob();
+            copyShareText();
+            alert('画像を保存しました。Instagramアプリで投稿してください。\nキャプションはクリップボードにコピー済みです。');
+        });
+    }
+
+    function shareToLINE() {
+        nativeShare(() => {
+            downloadBlob();
+            const text = encodeURIComponent(getShareText());
+            window.open(`https://social-plugins.line.me/lineit/share?text=${text}`, '_blank');
+        });
+    }
+
+    function shareToFacebook() {
+        nativeShare(() => {
+            downloadBlob();
+            copyShareText();
+            window.open(`https://www.facebook.com/sharer/sharer.php`, '_blank');
+        });
+    }
+
+    function downloadShareImage() {
+        downloadBlob();
     }
 
     function ordinal(n) {
@@ -109,6 +209,7 @@ const params = new URLSearchParams(location.search);
     function showLogin() {
         document.getElementById('result-card').style.display = 'none';
         document.getElementById('login-card').style.display = 'block';
+        document.getElementById('share-area').style.display = 'none';
     }
 
     // Enterキーで送信

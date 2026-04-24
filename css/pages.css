@@ -474,6 +474,30 @@ body.page-404 { display: flex; align-items: center; justify-content: center; min
 /* Analytics rare row highlight */
 .row-rare { background: rgba(255,152,0,0.15) !important; font-weight: bold; }
 
+/* SNS Share */
+#share-area { margin-top: 24px; }
+.share-preview-img {
+  width: 100%; border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  margin-bottom: 16px;
+}
+.share-buttons {
+  display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+}
+.share-btn {
+  width: 48px; height: 48px; border-radius: 50%;
+  border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05);
+  color: var(--text-muted); font-size: 20px;
+  cursor: pointer; transition: all 0.3s var(--smooth);
+  display: flex; align-items: center; justify-content: center;
+}
+.share-btn:hover { transform: scale(1.12); }
+.share-x:hover { background: #000; color: #fff; border-color: #000; }
+.share-instagram:hover { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: #fff; border-color: transparent; }
+.share-line:hover { background: #06c755; color: #fff; border-color: #06c755; }
+.share-facebook:hover { background: #1877f2; color: #fff; border-color: #1877f2; }
+.share-download:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
 /* Inline edit input (model answer edit) */
 .inline-edit-input {
   width: 100%; padding: 4px 6px; font-size: 16px; font-weight: 800;
