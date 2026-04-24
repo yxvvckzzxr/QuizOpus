@@ -87,8 +87,8 @@ const ShareCard = (() => {
     }
 
     function drawTitleBanner(ctx, projectName) {
-        const bannerY = 28;
-        const bannerH = 85;
+        const bannerY = 24;
+        const bannerH = 95;
         const skew = 20;
 
         // バナー背景（平行四辺形）
@@ -125,7 +125,7 @@ const ShareCard = (() => {
 
         ctx.save();
         ctx.textBaseline = 'middle';
-        ctx.font = 'bold 38px "Inter", "Noto Sans JP", sans-serif';
+        ctx.font = 'bold 44px "Inter", "Noto Sans JP", sans-serif';
 
         const match = projectName.match(/^(.+?the\s*)(\d+\w*)(.*)/i);
         if (match) {
@@ -133,28 +133,28 @@ const ShareCard = (() => {
             const part2 = match[2];
             const part3 = match[3] + suffix;
 
-            ctx.font = 'bold 38px "Inter", "Noto Sans JP", sans-serif';
+            ctx.font = 'bold 44px "Inter", "Noto Sans JP", sans-serif';
             const w1 = ctx.measureText(part1).width;
-            ctx.font = 'bold 46px "Inter", "Noto Sans JP", sans-serif';
+            ctx.font = 'bold 54px "Inter", "Noto Sans JP", sans-serif';
             const w2 = ctx.measureText(part2).width;
-            ctx.font = 'bold 38px "Inter", "Noto Sans JP", sans-serif';
+            ctx.font = 'bold 44px "Inter", "Noto Sans JP", sans-serif';
             const w3 = ctx.measureText(part3).width;
             const totalW = w1 + w2 + w3;
             let x = centerX - totalW / 2;
 
             ctx.textAlign = 'left';
-            ctx.font = 'bold 38px "Inter", "Noto Sans JP", sans-serif';
+            ctx.font = 'bold 44px "Inter", "Noto Sans JP", sans-serif';
             ctx.fillStyle = C.white;
             ctx.fillText(part1, x, textY);
             x += w1;
 
             // 数字部分 — 明るい水色で目立たせる
-            ctx.font = 'bold 46px "Inter", "Noto Sans JP", sans-serif';
+            ctx.font = 'bold 54px "Inter", "Noto Sans JP", sans-serif';
             ctx.fillStyle = '#60a5fa';
             ctx.fillText(part2, x, textY);
             x += w2;
 
-            ctx.font = 'bold 38px "Inter", "Noto Sans JP", sans-serif';
+            ctx.font = 'bold 44px "Inter", "Noto Sans JP", sans-serif';
             ctx.fillStyle = C.white;
             ctx.fillText(part3, x, textY);
         } else {
@@ -233,31 +233,47 @@ const ShareCard = (() => {
         // 値テキスト
         const bodyCenter = y + headerH + (h - headerH) / 2;
         const cardCenterX = x + w / 2 + skew / 2;
+        const maxTextW = w - 40; // カード内余白
         ctx.save();
         ctx.textBaseline = 'middle';
-        const fontSize = options.fontSize || 80;
+        let fontSize = options.fontSize || 80;
+
+        // テキスト幅を測って、はみ出す場合だけ縮小
         ctx.font = `800 ${fontSize}px "Inter", sans-serif`;
         ctx.fillStyle = C.textMain;
 
         if (options.suffix) {
-            // 値+単位を横並びでセンタリング
-            const valW = ctx.measureText(value).width;
-            const suffixFont = `600 ${Math.round(fontSize * 0.32)}px "Inter", sans-serif`;
-            ctx.save();
-            ctx.font = suffixFont;
-            const sufW = ctx.measureText(options.suffix).width;
-            ctx.restore();
-            const totalW = valW + 6 + sufW;
-            const startX = cardCenterX - totalW / 2;
+            const suffixRatio = 0.32;
+            // 全体幅を計算
+            let valW = ctx.measureText(value).width;
+            let sufFont = `600 ${Math.round(fontSize * suffixRatio)}px "Inter", sans-serif`;
+            ctx.save(); ctx.font = sufFont; let sufW = ctx.measureText(options.suffix).width; ctx.restore();
+            let totalW = valW + 6 + sufW;
 
+            while (totalW > maxTextW && fontSize > 40) {
+                fontSize -= 4;
+                ctx.font = `800 ${fontSize}px "Inter", sans-serif`;
+                valW = ctx.measureText(value).width;
+                sufFont = `600 ${Math.round(fontSize * suffixRatio)}px "Inter", sans-serif`;
+                ctx.save(); ctx.font = sufFont; sufW = ctx.measureText(options.suffix).width; ctx.restore();
+                totalW = valW + 6 + sufW;
+            }
+
+            const startX = cardCenterX - totalW / 2;
             ctx.font = `800 ${fontSize}px "Inter", sans-serif`;
             ctx.textAlign = 'left';
             ctx.fillText(value, startX, bodyCenter);
 
-            ctx.font = suffixFont;
+            ctx.font = sufFont;
             ctx.fillStyle = C.textSub;
             ctx.fillText(options.suffix, startX + valW + 6, bodyCenter + fontSize * 0.18);
         } else {
+            let textW = ctx.measureText(value).width;
+            while (textW > maxTextW && fontSize > 40) {
+                fontSize -= 4;
+                ctx.font = `800 ${fontSize}px "Inter", sans-serif`;
+                textW = ctx.measureText(value).width;
+            }
             ctx.textAlign = 'center';
             ctx.fillText(value, cardCenterX, bodyCenter);
         }
@@ -276,10 +292,10 @@ const ShareCard = (() => {
         drawTitleBanner(ctx, projectName || 'CIQ');
 
         // カードレイアウト
-        const cardTop = 140;
+        const cardTop = 145;
         const gap = 20;
         const mainW = 390;
-        const mainH = 380;
+        const mainH = 400;
         const sideW = 190;
         const sideH = (mainH - gap) / 2;
 
@@ -289,24 +305,24 @@ const ShareCard = (() => {
         // RANK
         const rankStr = String(rank || '-');
         drawCard(ctx, sx, cardTop, mainW, mainH, 'RANK', rankStr, {
-            fontSize: rankStr.length > 4 ? 64 : 86,
+            fontSize: 120,
         });
 
         // SCORE
         const scoreStr = String(score ?? '-');
         drawCard(ctx, sx + mainW + gap, cardTop, mainW, mainH, 'SCORE', scoreStr, {
-            fontSize: scoreStr.length > 4 ? 64 : 86,
+            fontSize: 120,
             suffix: 'pts',
         });
 
         // STREAK 1
         drawCard(ctx, sx + (mainW + gap) * 2, cardTop, sideW, sideH, 'STREAK 1', String(streaks[0] ?? '-'), {
-            fontSize: 52,
+            fontSize: 58,
         });
 
         // STREAK 2
         drawCard(ctx, sx + (mainW + gap) * 2, cardTop + sideH + gap, sideW, sideH, 'STREAK 2', String(streaks[1] ?? '-'), {
-            fontSize: 52,
+            fontSize: 58,
         });
 
         // CIQ ウォーターマーク（小さめ・さりげなく）
