@@ -56,12 +56,10 @@
                     case 'tab-scan':
                         loadEntryList();
                         break;
-                    case 'tab-stats':
-                        // スコアリスナーが既に動いているので updateStatsView を呼ぶだけ
-                        updateStatsView();
-                        break;
                 }
             }
+            // 集計タブは毎回更新
+            if (tabId === 'tab-stats') updateStatsView();
         }
 
         async function init() {
@@ -178,10 +176,7 @@
                 `projects/${projectId}/protected/${secretHash}/scores`,
                 (data) => {
                     scoresData = data || {};
-                    // 集計タブが表示中の場合のみ更新
-                    if (document.getElementById('tab-stats')?.classList.contains('active')) {
-                        updateStatsView();
-                    }
+                    updateStatsView();
                 },
                 5000
             );
