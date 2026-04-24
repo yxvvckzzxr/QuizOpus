@@ -85,9 +85,7 @@ const params = new URLSearchParams(location.search);
         document.getElementById('result-card').style.display = 'block';
         document.getElementById('result-name').textContent = disc.displayName || '';
         document.getElementById('result-rank').textContent = disc.rank || '';
-        document.getElementById('result-rank-sub').textContent = `/ ${disc.totalEntries || '?'}`;
         document.getElementById('result-score').textContent = disc.score;
-        document.getElementById('result-total').textContent = `${disc.score} / ${disc.totalQuestions || 100}`;
 
         // 連答表示
         const streaksEl = document.getElementById('result-streaks');
