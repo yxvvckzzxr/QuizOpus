@@ -134,17 +134,6 @@ async function dbTransaction(path, updateFn) {
     return { committed: result.committed, value: result.snapshot.val() };
 }
 
-/**
- * クエリ (orderByChild + equalTo)
- * @param {string} path - Firebase パス
- * @param {string} childKey - ソート/フィルタ対象の子キー
- * @param {*} value - 一致させる値
- * @returns {Promise<any>} data or null
- */
-async function dbQuery(path, childKey, value) {
-    const snap = await dbRef(path).orderByChild(childKey).equalTo(value).once('value');
-    return snap.val();
-}
 
 // ============================================
 //  リアルタイムリスナー（Poller 互換インターフェース）
@@ -309,13 +298,8 @@ async function showPreview(projectId, secretHash, entryNum) {
 
     overlay.style.display = 'block';
 
-    const answerData = await dbGet(`projects/${projectId}/protected/${secretHash}/answers/${entryNum}`);
     const pc = document.getElementById('preview-content');
-    // 新形式: answerImages に分離保存 / 旧形式: answers内のpageImage
-    let imageUrl = answerData?.pageImage;
-    if (!imageUrl) {
-        imageUrl = await dbGet(`projects/${projectId}/protected/${secretHash}/answerImages/${entryNum}`);
-    }
+    const imageUrl = await dbGet(`projects/${projectId}/protected/${secretHash}/answerImages/${entryNum}`);
     if (imageUrl) {
         pc.innerHTML = `<img src="${imageUrl}" alt="${name}" class="preview-image">`;
     } else {

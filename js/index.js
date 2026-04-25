@@ -91,20 +91,6 @@ async function joinProject() {
 		// まず公開設定が存在するか確認する
 		const pubSettings = await dbGet(`projects/${pid}/publicSettings`);
 		if (!pubSettings) {
-			// 旧バージョンとの互換性チェック
-			const oldSettings = await dbGet(`projects/${pid}/settings`);
-			if (oldSettings) {
-				// 旧システムのログイン
-				const pwdHash = await AppCrypto.hashPassword(pwd);
-				if (oldSettings.passwordHash ? oldSettings.passwordHash !== pwdHash : oldSettings.password !== pwd) {
-					throw new Error('パスワードが間違っています。');
-				}
-				session.set('projectId', pid);
-				session.set('scorer_name', name);
-				session.set('scorer_role', 'admin');
-				location.href = 'admin.html';
-				return;
-			}
 			throw new Error('指定されたプロジェクトIDが見つかりません');
 		}
 

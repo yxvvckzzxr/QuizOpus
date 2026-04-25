@@ -54,11 +54,7 @@
                     overlayBar.style.width = `${((idx + 1) / total) * 100}%`;
 
                     // ページ画像取得
-                    let imageUrl = await dbGet(`projects/${projectId}/protected/${secretHash}/answerImages/${en}`);
-                    if (!imageUrl) {
-                        const ansData = await dbGet(`projects/${projectId}/protected/${secretHash}/answers/${en}`);
-                        imageUrl = ansData?.pageImage;
-                    }
+                    const imageUrl = await dbGet(`projects/${projectId}/protected/${secretHash}/answerImages/${en}`);
                     if (!imageUrl) continue;
 
                     // 画像をCanvasにロード

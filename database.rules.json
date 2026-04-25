@@ -16,34 +16,6 @@
             ".read": "auth != null",
             ".write": "auth != null"
           }
-        },
-        "answers_text": {
-          ".read": "auth != null",
-          ".write": "auth != null"
-        },
-        "answers": {
-          ".read": "auth != null",
-          ".write": "auth != null"
-        },
-        "scores": {
-          ".read": "auth != null",
-          ".write": "auth != null"
-        },
-        "config": {
-          ".read": "auth != null",
-          ".write": "auth != null"
-        },
-        "entryConfig": {
-          ".read": "auth != null",
-          ".write": "auth != null"
-        },
-        "disclosure": {
-          ".read": "auth != null",
-          ".write": "auth != null"
-        },
-        "settings": {
-          ".read": "auth != null",
-          ".write": "auth != null"
         }
       }
     },

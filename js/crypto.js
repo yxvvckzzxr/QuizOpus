@@ -116,12 +116,6 @@ const AppCrypto = {
             ["decrypt"]
         );
         const combined = new Uint8Array(atob(base64Data).split('').map(c => c.charCodeAt(0)));
-        // 旧形式（直接RSA暗号化）かハイブリッド形式かを判定
-        if (combined.length <= 256) {
-            // 旧形式: RSA-2048の出力は256バイト固定
-            const decrypted = await crypto.subtle.decrypt({ name: "RSA-OAEP" }, privateKey, combined);
-            return new TextDecoder().decode(decrypted);
-        }
         // ハイブリッド形式: IV(12) + keyLen(2) + encryptedKey + encryptedData
         const iv = combined.slice(0, 12);
         const ekLen = (combined[12] << 8) | combined[13];

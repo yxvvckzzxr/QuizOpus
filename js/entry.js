@@ -330,11 +330,6 @@ const params = new URLSearchParams(location.search);
             try {
                 // プロジェクト名を取得して表示
                 let settings = await dbGet(`projects/${projectId}/publicSettings`);
-                if (!settings) {
-                    // 旧形式フォールバック
-                    const sName = await dbGet(`projects/${projectId}/settings/projectName`);
-                    settings = { projectName: sName };
-                }
                 if (settings) {
                     const pName = settings.projectName || projectId;
                     document.getElementById('project-title').textContent = pName;

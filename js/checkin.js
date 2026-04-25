@@ -20,10 +20,6 @@ if (!projectId) {
         (async function init() {
             await waitForAuth();
             let pName = await dbGet(`projects/${projectId}/publicSettings/projectName`);
-            if (!pName) {
-                const s = await dbGet(`projects/${projectId}/settings`);
-                pName = s?.projectName;
-            }
             if (pName) {
                 document.getElementById('page-title').innerHTML = `<i class="fa-solid fa-qrcode"></i> ${escapeHtml(pName)} 受付`;
             }
@@ -101,8 +97,6 @@ if (!projectId) {
                 }
                 return `受付番号 ${padNum(data.entryNumber)}`;
             }
-            // 旧形式（暗号化なし）
-            if (data.familyName) return `${data.familyName} ${data.firstName || ''}`;
             return `受付番号 ${padNum(data.entryNumber)}`;
         }
 

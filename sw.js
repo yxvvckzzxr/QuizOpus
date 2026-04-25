@@ -40,7 +40,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // Firebase REST API やGASはキャッシュしない
+    // Firebase WebSocket はキャッシュしない
     if (url.hostname.includes('firebasedatabase') ||
         url.hostname.includes('googleapis') ||
         url.hostname.includes('google.com')) {
